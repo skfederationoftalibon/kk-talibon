@@ -34,6 +34,7 @@ body{min-height:100vh;}
 .pill-teal{background:var(--teal-l);color:var(--teal);}
 .pill-orange{background:var(--orange-l);color:var(--orange);}
 .pill-gray{background:var(--gray-m);color:var(--gray-s);}
+.pill-pending{background:var(--amber-l);color:var(--amber);}
 
 .btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--r);font-size:13px;font-weight:500;cursor:pointer;border:1px solid transparent;transition:all .15s;font-family:var(--font);}
 .btn-primary{background:var(--blue);color:#fff;border-color:var(--blue);}
@@ -302,7 +303,8 @@ create table if not exists announcements (
   venue text, event_date text,
   channels text[], audience jsonb,
   recipients integer, status text,
-  sent_by text, created_at timestamptz default now()
+  sent_by text, sent_brgy text,
+  created_at timestamptz default now()
 );
 create table if not exists feedbacks (
   id uuid default gen_random_uuid() primary key,
@@ -424,6 +426,13 @@ create policy "open" on assessments for all using (true) with check (true);</pre
         <div class="fg"><label>Mother's Contact</label><input id="rMotherC" placeholder="Mobile number"></div>
         <div class="fg"><label>Guardian's Full Name</label><input id="rGuard" placeholder="If different from parents"></div>
         <div class="fg"><label>Guardian's Contact</label><input id="rGuardC" placeholder="Mobile number"></div>
+        <div class="form-section">Special Categories <span style="font-weight:400;color:var(--gray-s);text-transform:none;letter-spacing:0;font-size:10px;">(Check all that apply — Optional)</span></div>
+        <div class="fg"><label>PWD (Person with Disability)</label><select id="rPWD"><option value="">No</option><option value="Yes">Yes</option></select></div>
+        <div class="fg"><label>4Ps / Pantawid Beneficiary</label><select id="r4Ps"><option value="">No</option><option value="Yes">Yes</option></select></div>
+        <div class="fg"><label>Indigenous People / Lumad</label><select id="rIP"><option value="">No</option><option value="Yes">Yes</option></select></div>
+        <div class="fg"><label>Solo Parent / Child of Solo Parent</label><select id="rSolo"><option value="">No</option><option value="Yes">Yes</option></select></div>
+        <div class="fg"><label>Registered Voter</label><select id="rVoter"><option value="">Not yet registered</option><option value="Yes">Yes, registered voter</option><option value="No">No, not yet registered</option></select></div>
+        <div class="fg"><label>Scholarship Recipient</label><select id="rScholar"><option value="">No</option><option value="Yes">Yes</option></select></div>
         <div class="form-section">Participation</div>
         <div class="fg full"><label>Programs / Activities Joined</label><input id="rProgs" placeholder="e.g. Sports Development, Leadership Training"></div>
         <div class="fg full"><label>Skills / Interests</label><input id="rSkills" placeholder="e.g. Basketball, Farming, Arts, Computer"></div>
@@ -441,7 +450,7 @@ create policy "open" on assessments for all using (true) with check (true);</pre
         <svg viewBox="0 0 24 24" fill="none" stroke="#057a55" stroke-width="2.5" style="width:28px;height:28px;"><polyline points="20 6 9 17 4 12"/></svg>
       </div>
       <div style="font-size:18px;font-weight:700;color:#1e293b;margin-bottom:8px;">Profile Submitted!</div>
-      <div style="font-size:13px;color:var(--gray-s);max-width:340px;margin:0 auto 20px;line-height:1.7;">Thank you! Your profile has been recorded. You will receive notifications about SK events and announcements through the channels you provided.</div>
+      <div style="font-size:13px;color:var(--gray-s);max-width:340px;margin:0 auto 20px;line-height:1.7;">Thank you! Your profile has been submitted and is <strong>pending review</strong> by your SK Chairman. You will be notified once your profile is approved.</div>
       <button class="btn btn-primary" onclick="location.reload()">Register Another Person</button>
     </div>
   </div>
@@ -555,6 +564,8 @@ create policy "open" on assessments for all using (true) with check (true);</pre
           <select id="mFSex" onchange="filterMembers()"><option value="">All Sexes</option><option>Male</option><option>Female</option><option>Intersex</option></select>
           <select id="mFGender" onchange="filterMembers()"><option value="">All Gender Identities</option><option>Man / Boy</option><option>Woman / Girl</option><option>Transgender Man</option><option>Transgender Woman</option><option>Non-Binary</option><option>Gender Non-Conforming</option><option>Prefer not to say</option></select>
           <select id="mFAge" onchange="filterMembers()"><option value="">All Age Groups</option><option value="15-17">15–17 (Child Youth)</option><option value="18-24">18–24 (Core Youth)</option><option value="25-30">25–30 (Young Adult)</option></select>
+          <select id="mFStatus" onchange="filterMembers()"><option value="">All Status</option><option value="Active">Active</option><option value="Pending">Pending</option><option value="Inactive">Inactive</option></select>
+          <button class="btn btn-outline btn-sm" onclick="exportCSV()">⬇ Export CSV</button>
           <button class="btn btn-primary btn-sm" onclick="openAddMember()">+ Add Member</button>
         </div>
         <div style="font-size:12px;color:var(--gray-s);margin-bottom:8px;" id="memberCountLabel"></div>
@@ -562,8 +573,8 @@ create policy "open" on assessments for all using (true) with check (true);</pre
           <div class="table-wrap">
             <table>
               <thead><tr>
-                <th style="width:190px;">Name</th><th>Age</th><th>Sex at Birth</th><th>Gender Identity</th>
-                <th>Barangay</th><th>Purok</th><th>Classification</th>
+                <th style="width:60px;">KK ID</th><th style="width:190px;">Name</th><th>Age</th><th>Sex at Birth</th><th>Gender Identity</th>
+                <th>Barangay</th><th>Purok</th><th>Classification</th><th>Status</th>
                 <th>Mobile</th><th class="no-print">Actions</th>
               </tr></thead>
               <tbody id="membersTable"></tbody>
@@ -583,6 +594,7 @@ create policy "open" on assessments for all using (true) with check (true);</pre
         <!-- LIST -->
         <div id="annopanel-list">
           <div class="filter-bar no-print" style="margin-bottom:14px;">
+            <input type="text" id="annoSearch" placeholder="Search announcements..." oninput="renderAnnouncements()" style="flex:1;min-width:160px;">
             <select id="annoFilterType" onchange="renderAnnouncements()"><option value="">All Types</option><option>Event</option><option>Alert</option><option>Announcement</option><option>Reminder</option><option>Health</option></select>
             <select id="annoFilterBrgy" onchange="renderAnnouncements()"><option value="">All Barangays</option><option value="All">Sent to All</option></select>
           </div>
@@ -658,6 +670,7 @@ create policy "open" on assessments for all using (true) with check (true);</pre
                     Send Announcement
                   </button>
                   <button class="btn btn-outline" onclick="saveDraft()">Save as Draft</button>
+                <button class="btn btn-outline" onclick="copyForMessenger()" style="background:var(--purple-l);color:var(--purple);border-color:#8b5cf6;">💬 Copy for Messenger/FB</button>
                 </div>
                 <div class="send-progress hidden" id="sendProgress"><div class="send-bar" id="sendBar" style="width:0%"></div></div>
                 <div id="sendMsg" style="font-size:12.5px;color:var(--green);margin-top:8px;display:none;"></div>
@@ -810,6 +823,19 @@ Type your message to see a preview here.</div>
             <li>Print as QR code and post on your barangay hall bulletin board</li>
           </ul>
           <button class="btn btn-outline" style="margin-top:14px;" onclick="previewRegForm()">Preview Registration Form</button>
+          <hr style="border:none;border-top:1px solid var(--border);margin:18px 0;">
+          <div class="admin-only">
+            <div style="font-size:12px;font-weight:600;color:#1e293b;margin-bottom:6px;">Database Migration (run once if upgrading)</div>
+            <div style="font-size:12px;color:var(--gray-s);margin-bottom:8px);line-height:1.6;">If you set up the database before this update, run this SQL in Supabase SQL Editor to add the new column:</div>
+            <pre style="font-family:var(--mono);background:#1e293b;color:#7dd3fc;padding:10px 14px;border-radius:var(--r);font-size:11px;white-space:pre-wrap;margin-bottom:8px;" id="migrationSQL">ALTER TABLE announcements ADD COLUMN IF NOT EXISTS sent_brgy text;
+ALTER TABLE members ADD COLUMN IF NOT EXISTS is_pwd text;
+ALTER TABLE members ADD COLUMN IF NOT EXISTS is_4ps text;
+ALTER TABLE members ADD COLUMN IF NOT EXISTS is_ip text;
+ALTER TABLE members ADD COLUMN IF NOT EXISTS is_solo text;
+ALTER TABLE members ADD COLUMN IF NOT EXISTS is_voter text;
+ALTER TABLE members ADD COLUMN IF NOT EXISTS is_scholar text;</pre>
+            <button class="btn btn-outline btn-sm" onclick="navigator.clipboard.writeText(document.getElementById('migrationSQL').textContent).then(()=>showToast('Migration SQL copied!','ok'))">Copy Migration SQL</button>
+          </div>
         </div>
       </div>
 
@@ -980,6 +1006,13 @@ Type your message to see a preview here.</div>
         <div class="fg"><label>Mother's Contact</label><input id="mMotherC" placeholder="Mobile number"></div>
         <div class="fg"><label>Guardian's Name</label><input id="mGuard" placeholder="If different"></div>
         <div class="fg"><label>Guardian's Contact</label><input id="mGuardC" placeholder="Mobile number"></div>
+        <div class="form-section">Special Categories <span style="font-weight:400;text-transform:none;color:var(--gray-xs);letter-spacing:0;">(Optional)</span></div>
+        <div class="fg"><label>PWD</label><select id="mPWD"><option value="">No</option><option value="Yes">Yes</option></select></div>
+        <div class="fg"><label>4Ps Beneficiary</label><select id="m4Ps"><option value="">No</option><option value="Yes">Yes</option></select></div>
+        <div class="fg"><label>Indigenous People</label><select id="mIP"><option value="">No</option><option value="Yes">Yes</option></select></div>
+        <div class="fg"><label>Solo Parent</label><select id="mSolo"><option value="">No</option><option value="Yes">Yes</option></select></div>
+        <div class="fg"><label>Registered Voter</label><select id="mVoter"><option value="">Not registered</option><option value="Yes">Yes</option><option value="No">No</option></select></div>
+        <div class="fg"><label>Scholarship Recipient</label><select id="mScholar"><option value="">No</option><option value="Yes">Yes</option></select></div>
         <div class="form-section">Participation</div>
         <div class="fg full"><label>Programs Joined</label><input id="mProgs" placeholder="Comma-separated"></div>
         <div class="fg full"><label>Skills / Interests</label><input id="mSkills" placeholder="Basketball, Farming, Arts..."></div>
@@ -1001,7 +1034,7 @@ Type your message to see a preview here.</div>
       <div class="modal-close" onclick="closeModal('modalProfile')">✕</div>
     </div>
     <div class="modal-body" id="profileBody"></div>
-    <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('modalProfile')">Close</button></div>
+    <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('modalProfile')">Close</button><button class="btn btn-outline" onclick="printProfile()">🖨 Print Profile</button></div>
   </div>
 </div>
 
@@ -1222,6 +1255,7 @@ function renderDashboard(){
     <div class="stat-card"><div class="stat-icon" style="background:#eff4ff;"><svg viewBox="0 0 24 24" fill="none" stroke="#1a56db" stroke-width="2" style="width:18px;height:18px;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div><div class="stat-label">Total Members</div><div class="stat-value">${data.length}</div><div class="stat-sub">${CR==='federation'?'All 25 barangays':CB}</div></div>
     <div class="stat-card"><div class="stat-icon" style="background:var(--green-l);"><svg viewBox="0 0 24 24" fill="none" stroke="#057a55" stroke-width="2" style="width:18px;height:18px;"><polyline points="20 6 9 17 4 12"/></svg></div><div class="stat-label">Active</div><div class="stat-value">${data.filter(m=>m.status==='Active').length}</div><div class="stat-sub">${data.length?Math.round(data.filter(m=>m.status==='Active').length/data.length*100):0}% of total</div></div>
     <div class="stat-card"><div class="stat-icon" style="background:var(--amber-l);"><svg viewBox="0 0 24 24" fill="none" stroke="#92400e" stroke-width="2" style="width:18px;height:18px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div><div class="stat-label">Out of School Youth</div><div class="stat-value">${osy}</div><div class="stat-sub">Needs intervention</div></div>
+    <div class="stat-card"><div class="stat-icon" style="background:var(--amber-l);"><svg viewBox="0 0 24 24" fill="none" stroke="#92400e" stroke-width="2" style="width:18px;height:18px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><div class="stat-label">Pending Approval</div><div class="stat-value">${data.filter(m=>m.status==='Pending').length}</div><div class="stat-sub" style="color:var(--amber);">Needs review</div></div>
     <div class="stat-card"><div class="stat-icon" style="background:var(--teal-l);"><svg viewBox="0 0 24 24" fill="none" stroke="#005661" stroke-width="2" style="width:18px;height:18px;"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></div><div class="stat-label">Working / Employed</div><div class="stat-value">${working}</div><div class="stat-sub">Including working students</div></div>
   `;
   const byC={};CLASSIFS.forEach(c=>byC[c]=0);data.forEach(m=>{if(byC[m.classif]!==undefined)byC[m.classif]++;});
@@ -1236,7 +1270,8 @@ function renderDashboard(){
   if(CR==='federation'){BARANGAYS.forEach(b=>{const c=data.filter(m=>m.brgy===b).length;if(c>0)brgyArr.push([b,c]);});brgyArr.sort((a,b)=>b[1]-a[1]);brgyArr=brgyArr.slice(0,10);}
   else{brgyArr=[[CB,data.length]];}
   const maxB=Math.max(...brgyArr.map(x=>x[1]),1);
-  document.getElementById('brgyChart').innerHTML=brgyArr.map(([b,v])=>`
+  const brgyTotal=brgyArr.reduce((s,[,v])=>s+v,0);
+  document.getElementById('brgyChart').innerHTML=(CR==='federation'?'<div style="font-size:11px;color:var(--gray-s);margin-bottom:8px;">Showing top '+brgyArr.length+' of 25 barangays · '+brgyTotal+' total profiled</div>':'')+brgyArr.map(([b,v])=>`
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
       <div style="font-size:11.5px;width:110px;color:var(--gray-s);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${b}</div>
       <div style="flex:1;background:var(--gray-m);border-radius:4px;height:6px;overflow:hidden;"><div style="width:${Math.round(v/maxB*100)}%;height:100%;background:var(--green-m);border-radius:4px;"></div></div>
@@ -1262,16 +1297,19 @@ function filterMembers(){
   document.getElementById('ph-mem-sub').textContent=`SK Talibon Federation · Printed ${new Date().toLocaleDateString('en-PH')} · ${data.length} records`;
   const tb=document.getElementById('membersTable');
   if(!data.length){tb.innerHTML=`<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--gray-s);">No members found.</td></tr>`;return;}
-  tb.innerHTML=data.map(m=>`<tr>
+  tb.innerHTML=data.map((m,idx)=>`<tr>
+    <td style="font-size:11px;color:var(--gray-s);font-family:var(--mono);">KK-${String(idx+1).padStart(4,'0')}</td>
     <td><div class="td-name"><div class="av av-blue">${m.fn[0]}${m.ln[0]}</div><div><div style="font-weight:500;">${m.fn} ${m.mn?m.mn[0]+'. ':''}${m.ln}</div><div style="font-size:11px;color:var(--gray-s);">${m.email||m.mobile}</div></div></div></td>
     <td>${m.age}</td><td style="font-size:11.5px;">${m.sex||'—'}</td><td style="font-size:11.5px;">${m.gender||'—'}</td>
     <td style="font-size:12px;">${m.brgy}</td>
     <td style="font-size:12px;">${m.purok}</td>
     <td><span class="pill ${CLASSIF_COLORS[m.classif]||'pill-gray'}">${m.classif}</span></td>
+    <td><span class="pill ${m.status==='Active'?'pill-green':m.status==='Pending'?'pill-pending':'pill-gray'}">${m.status}</span></td>
     <td style="font-size:12px;">${m.mobile}</td>
     <td class="no-print" style="white-space:nowrap;">
       <button class="btn btn-outline btn-xs" onclick="viewProfile('${m.id}')" style="margin-right:3px;">View</button>
       <button class="btn btn-outline btn-xs" onclick="openEditMember('${m.id}')" style="margin-right:3px;">Edit</button>
+      ${m.status==='Pending'?`<button class="btn btn-green btn-xs" onclick="approveMember('${m.id}')" style="margin-right:3px;">Approve</button>`:''}
       ${CR==='federation'?`<button class="btn btn-danger btn-xs" onclick="delMember('${m.id}')">Remove</button>`:''}
     </td>
   </tr>`).join('');
@@ -1296,8 +1334,14 @@ async function saveMember(){
   const classif=document.getElementById('mClassif').value,mobile=document.getElementById('mMobile').value.trim();
   if(!fn||!ln||!age||!sex||!brgy||!purok||!classif||!mobile){alert('Please fill in all required fields.');return;}
   if(age<15||age>30){alert('Age must be between 15 and 30.');return;}
+  const mobileClean=mobile.replace(/[-\s]/g,'');
+  if(!/^(09|\+639)\d{9}$/.test(mobileClean)){alert('Please enter a valid Philippine mobile number (e.g. 09xx-xxx-xxxx).');return;}
+  // Duplicate check
+  const dupMobile=members.find(x=>x.mobile===mobile&&String(x.id)!==String(editingMemberId||''));
+  if(dupMobile){if(!confirm('Warning: A member named '+dupMobile.fn+' '+dupMobile.ln+' from '+dupMobile.brgy+' already has this mobile number ('+mobile+'). Continue anyway?'))return;}
   const gender=document.getElementById('mGender').value;
-  const m={fn,ln,mn:document.getElementById('mMN').value,suffix:document.getElementById('mSuffix').value,dob:document.getElementById('mDOB').value,age,sex,gender,civil:document.getElementById('mCivil').value,brgy,purok,addr:document.getElementById('mAddr').value,mobile,email:document.getElementById('mEmail').value,fb:document.getElementById('mFB').value,classif,school:document.getElementById('mSchool').value,year:document.getElementById('mYearLevel').value,father:document.getElementById('mFather').value,fatherC:document.getElementById('mFatherC').value,mother:document.getElementById('mMother').value,motherC:document.getElementById('mMotherC').value,guard:document.getElementById('mGuard').value,guardC:document.getElementById('mGuardC').value,progs:document.getElementById('mProgs').value,skills:document.getElementById('mSkills').value,notes:document.getElementById('mNotes').value,status:'Active'};
+  const m={fn,ln,mn:document.getElementById('mMN').value,suffix:document.getElementById('mSuffix').value,dob:document.getElementById('mDOB').value,age,sex,gender,civil:document.getElementById('mCivil').value,brgy,purok,addr:document.getElementById('mAddr').value,mobile,email:document.getElementById('mEmail').value,fb:document.getElementById('mFB').value,classif,school:document.getElementById('mSchool').value,year:document.getElementById('mYearLevel').value,father:document.getElementById('mFather').value,fatherC:document.getElementById('mFatherC').value,mother:document.getElementById('mMother').value,motherC:document.getElementById('mMotherC').value,guard:document.getElementById('mGuard').value,guardC:document.getElementById('mGuardC').value,progs:document.getElementById('mProgs').value,skills:document.getElementById('mSkills').value,notes:document.getElementById('mNotes').value,
+    isPWD:document.getElementById('mPWD').value,is4Ps:document.getElementById('m4Ps').value,isIP:document.getElementById('mIP').value,isSolo:document.getElementById('mSolo').value,isVoter:document.getElementById('mVoter').value,isScholar:document.getElementById('mScholar').value,status:'Active'};
   const btn=document.querySelector('#modalMember .btn-primary');if(btn)btn.disabled=true;
   try{
     const saved=await dbSave({...m,id:editingMemberId||null});
@@ -1313,6 +1357,8 @@ async function delMember(id){if(!confirm('Remove this member from the database? 
 
 function viewProfile(id){
   const m=members.find(x=>String(x.id)===String(id));if(!m)return;
+  const kkIdx=members.findIndex(x=>String(x.id)===String(id));
+  const kkId='KK-'+String(kkIdx+1).padStart(4,'0');
   const bg=m.sex==='Female'?'var(--green-l)':m.sex==='Male'?'var(--blue-l)':'var(--purple-l)';
   const col=m.sex==='Female'?'var(--green)':m.sex==='Male'?'var(--blue-d)':'var(--purple)';
   document.getElementById('profileBody').innerHTML=`
@@ -1343,6 +1389,7 @@ function viewProfile(id){
       ${m.year?`<div class="pf-item"><div class="lbl">Year / Level</div><div class="val">${m.year}</div></div>`:''}
       ${m.progs?`<div class="pf-item" style="grid-column:1/-1;"><div class="lbl">Programs Joined</div><div class="val">${m.progs}</div></div>`:''}
       ${m.skills?`<div class="pf-item" style="grid-column:1/-1;"><div class="lbl">Skills / Interests</div><div class="val">${m.skills}</div></div>`:''}
+      ${(m.isPWD||m.is4Ps||m.isIP||m.isSolo||m.isVoter||m.isScholar)?`<div class="pf-section-title">Special Categories</div>${m.isPWD==='Yes'?'<div class="pf-item"><div class="lbl">PWD</div><div class="val">Yes</div></div>':''}${m.is4Ps==='Yes'?'<div class="pf-item"><div class="lbl">4Ps Beneficiary</div><div class="val">Yes</div></div>':''}${m.isIP==='Yes'?'<div class="pf-item"><div class="lbl">Indigenous People</div><div class="val">Yes</div></div>':''}${m.isSolo==='Yes'?'<div class="pf-item"><div class="lbl">Solo Parent</div><div class="val">Yes</div></div>':''}${m.isVoter?'<div class="pf-item"><div class="lbl">Voter Status</div><div class="val">'+m.isVoter+'</div></div>':''}${m.isScholar==='Yes'?'<div class="pf-item"><div class="lbl">Scholar</div><div class="val">Yes</div></div>':''}`:''}
     </div>
     ${(m.father||m.mother||m.guard)?`<div class="parent-box"><div style="font-size:11px;font-weight:700;color:var(--blue-d);text-transform:uppercase;letter-spacing:.07em;">Parents / Guardian</div><div class="parent-grid">
       <div class="pf-item"><div class="lbl">Father</div><div class="val">${m.father||'—'}</div>${m.fatherC?`<div style="font-size:11px;color:var(--gray-s);">${m.fatherC}</div>`:''}</div>
@@ -1350,10 +1397,13 @@ function viewProfile(id){
       <div class="pf-item"><div class="lbl">Guardian</div><div class="val">${m.guard||'—'}</div>${m.guardC?`<div style="font-size:11px;color:var(--gray-s);">${m.guardC}</div>`:''}</div>
     </div></div>`:''}
     ${m.notes?`<div style="margin-top:12px;padding:10px 14px;background:var(--amber-l);border-radius:var(--r);font-size:12.5px;color:var(--amber);">${m.notes}</div>`:''}
+  <div style="margin-top:12px;"><div style="font-size:11px;font-weight:700;color:var(--blue-d);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;">Chairman Assessments</div><div id="profileAssessments">Loading...</div></div>
   `;
   openModal('modalProfile');
+  const mAssess=assessments.filter(a=>String(a.memberId)===String(id));
+  const el=document.getElementById('profileAssessments');
+  if(el){el.innerHTML=mAssess.length?mAssess.map(a=>`<div style="padding:8px 10px;background:var(--gray-l);border-radius:var(--r);margin-bottom:6px;font-size:12.5px;"><div style="display:flex;justify-content:space-between;"><span style="font-weight:500;">${a.chairName}</span><span style="color:var(--gray-s);font-size:11px;">${a.date}</span></div><div style="color:#d97706;">${'★'.repeat(a.rating)}${'☆'.repeat(5-a.rating)}</div><div style="color:var(--gray-s);">${a.participation} · ${a.status}</div>${a.remark?'<div style="margin-top:4px;">'+a.remark+'</div>':''}</div>`).join(''):'<div style="font-size:12px;color:var(--gray-s);">No assessments yet.</div>';}
 }
-
 function openEditMember(id){
   const m=members.find(x=>String(x.id)===String(id));if(!m)return;
   editingMemberId=id;
@@ -1386,6 +1436,12 @@ function openEditMember(id){
   document.getElementById('mProgs').value=m.progs||'';
   document.getElementById('mSkills').value=m.skills||'';
   document.getElementById('mNotes').value=m.notes||'';
+  document.getElementById('mPWD').value=m.isPWD||'';
+  document.getElementById('m4Ps').value=m.is4Ps||'';
+  document.getElementById('mIP').value=m.isIP||'';
+  document.getElementById('mSolo').value=m.isSolo||'';
+  document.getElementById('mVoter').value=m.isVoter||'';
+  document.getElementById('mScholar').value=m.isScholar||'';
   openModal('modalMember');
 }
 
@@ -1397,25 +1453,44 @@ function annoTab(t){
   });
   if(t==='list')renderAnnouncements();
   if(t==='log')renderSendLog();
+  if(t==='compose'){
+    // If chairman, lock audience to their own barangay
+    const audBrgy=document.getElementById('audBrgy');
+    if(CR==='chairman'&&CB&&audBrgy){
+      audBrgy.value=CB;
+      audBrgy.disabled=true;
+      audBrgy.style.background='var(--gray-l)';
+    } else if(CR==='federation'&&audBrgy){
+      audBrgy.disabled=false;
+      audBrgy.style.background='';
+    }
+    updateRecipientCount();
+  }
 }
 
 function renderAnnouncements(){
   const tf=document.getElementById('annoFilterType')?.value||'';
   const bf=document.getElementById('annoFilterBrgy')?.value||'';
+  const sq=(document.getElementById('annoSearch')?.value||'').toLowerCase();
   let data=[...announcements];
+  if(sq)data=data.filter(a=>(a.title+a.body+a.sentBy).toLowerCase().includes(sq));
   if(tf)data=data.filter(a=>a.type===tf);
   if(bf==='All')data=data.filter(a=>!a.audience.brgy);
   else if(bf)data=data.filter(a=>a.audience.brgy===bf);
-  if(CR==='chairman')data=data.filter(a=>!a.audience.brgy||a.audience.brgy===CB);
+  if(CR==='chairman')data=data.filter(a=>!a.audience?.brgy||a.audience?.brgy===CB||a.sentBrgy===CB);
   const el=document.getElementById('annoList');
   if(!data.length){el.innerHTML='<div style="color:var(--gray-s);font-size:13px;padding:16px 0;">No announcements yet.</div>';return;}
   el.innerHTML=data.map(a=>`<div class="annc-card">
     <div class="annc-type-bar">
       <span class="pill ${TYPE_COLORS[a.type]||'pill-gray'}">${TYPE_EMOJI[a.type]||''} ${a.type}</span>
       <span style="font-size:11px;color:var(--gray-xs);">${a.date}</span>
+      <span style="font-size:11px;color:var(--blue-d);background:var(--blue-l);padding:2px 8px;border-radius:10px;font-weight:500;">By: ${a.sentBy}</span>
       <span class="pill ${a.status==='Sent'?'pill-green':a.status==='Draft'?'pill-gray':'pill-amber'}" style="margin-left:auto;">${a.status}</span>
     </div>
-    <div class="annc-title">${a.title}</div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      <div class="annc-title" style="margin:0;">${a.title}</div>
+      ${CR==="federation"&&a.sentBrgy&&a.sentBrgy!=="Federation"?'<span style="font-size:10px;background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:10px;font-weight:600;">📍 '+a.sentBrgy+'</span>':''}
+    </div>
     <div class="annc-body">${a.body.length>180?a.body.slice(0,180)+'...':a.body}</div>
     ${a.venue?`<div style="font-size:12px;color:var(--gray-s);">📍 ${a.venue}</div>`:''}
     ${a.eventDate?`<div style="font-size:12px;color:var(--blue-d);margin-top:3px;">📅 ${new Date(a.eventDate).toLocaleString('en-PH',{dateStyle:'medium',timeStyle:'short'})}</div>`:''}
@@ -1423,7 +1498,8 @@ function renderAnnouncements(){
       <span>Sent by: ${a.sentBy}</span>
       <span>Recipients: ${a.recipients}</span>
       <span>Channels: ${a.channels.map(c=>c==='email'?'Email':c==='sms'?'SMS':'Messenger').join(', ')}</span>
-      <button class="btn btn-outline btn-xs" onclick="viewAnnouncement(${a.id})">Read More</button>
+      <button class="btn btn-outline btn-xs" onclick="viewAnnouncement('${a.id}')">Read More</button>
+      <button class="btn btn-xs" style="background:var(--purple-l);color:var(--purple);border:1px solid #8b5cf6;border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;" onclick="copyAnnouncementMsg('${a.id}')">💬 Copy</button>
     </div>
     <div class="notif-channels" style="margin-top:6px;">
       ${a.channels.includes('email')?'<span class="ch-chip ch-email">✉️ Email</span>':''}
@@ -1514,7 +1590,8 @@ async function finalizeSend(title,body,type,recipients){
   const aa=document.getElementById('audAge').value;
   const eventDate=document.getElementById('cEventDate').value;
   const venue=document.getElementById('cVenue').value;
-  const a={id:nextAId++,type,title,body,venue,eventDate,channels:[...selectedChannels],audience:{brgy:ab,classif:ac,age:aa},recipients:recipients.length,status:'Sent',date:new Date().toLocaleDateString('en-PH'),sentBy:ACCOUNTS[CU]?.name||CU};
+  const sentByName=(ACCOUNTS[CU]?.displayName||ACCOUNTS[CU]?.name||CU)+(CR==='chairman'?' ('+CB+')':'');
+  const a={id:nextAId++,type,title,body,venue,eventDate,channels:[...selectedChannels],audience:{brgy:ab||CB||'',classif:ac,age:aa},recipients:recipients.length,status:'Sent',date:new Date().toLocaleDateString('en-PH'),sentBy:sentByName,sentBrgy:CB||'Federation'};
   announcements.unshift(a);
   try{await dbAnnounce(a);}catch(e){showToast("Announce DB error: "+e.message,"err");}
   sentLog.unshift({...a,recipientList:recipients.map(m=>m.fn+' '+m.ln+' ('+m.brgy+')').slice(0,10)});
@@ -1532,6 +1609,50 @@ async function finalizeSend(title,body,type,recipients){
   updatePreview();
   const badge=document.getElementById('navAnnounceBadge');
   badge.style.display='flex';badge.textContent=announcements.length;
+}
+
+function copyAnnouncementMsg(id){
+  const a=announcements.find(x=>String(x.id)===String(id));if(!a)return;
+  const emoji={'Event':'📅','Alert':'🚨','Announcement':'📢','Reminder':'🔔','Health':'🏥'};
+  let msg=(emoji[a.type]||'📢')+' *'+a.title+'*
+
+'+a.body;
+  if(a.venue)msg+='
+
+📍 Venue: '+a.venue;
+  if(a.eventDate)msg+='
+🗓 '+new Date(a.eventDate).toLocaleString('en-PH',{dateStyle:'full',timeStyle:'short'});
+  msg+='
+
+— '+a.sentBy;
+  navigator.clipboard.writeText(msg).then(()=>showToast('Copied! Paste in Messenger or Facebook.','ok')).catch(()=>{showToast('Copy failed — please copy manually.','err');});
+}
+
+function copyForMessenger(){
+  const title=document.getElementById('cTitle').value.trim();
+  const body=document.getElementById('cBody').value.trim();
+  const venue=document.getElementById('cVenue').value.trim();
+  const evdate=document.getElementById('cEventDate').value;
+  const type=document.getElementById('cType').value||'Announcement';
+  if(!title&&!body){showToast('Please write a title and message first.','err');return;}
+  const emoji={'Event':'📅','Alert':'🚨','Announcement':'📢','Reminder':'🔔','Health':'🏥'};
+  let msg=emoji[type]||'📢';
+  msg+=' *'+title+'*
+
+';
+  msg+=body+'
+';
+  if(venue)msg+='
+📍 Venue: '+venue;
+  if(evdate)msg+='
+🗓 Date & Time: '+new Date(evdate).toLocaleString('en-PH',{dateStyle:'full',timeStyle:'short'});
+  msg+='
+
+— SK Talibon Federation';
+  navigator.clipboard.writeText(msg).then(()=>showToast('Message copied! Paste it in Messenger or Facebook.','ok')).catch(()=>{
+    const ta=document.createElement('textarea');ta.value=msg;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
+    showToast('Message copied!','ok');
+  });
 }
 
 function saveDraft(){
@@ -1608,8 +1729,21 @@ function renderChairTable(){
     <td>${c.brgy}</td><td style="font-size:12px;">${c.contact}</td>
     <td style="font-family:var(--mono);font-size:12px;">${c.username}</td>
     <td>${members.filter(m=>m.brgy===c.brgy).length}</td>
-    <td><button class="btn btn-danger btn-xs" onclick="alert('Remove functionality in production version')">Remove</button></td>
+    <td><button class="btn btn-outline btn-xs" onclick="openEditChairDirect('${c.brgy}')" style="margin-right:4px;">Edit</button><button class="btn btn-danger btn-xs" onclick="removeChairman(${c.id})">Remove</button></td>
   </tr>`).join('');
+}
+function removeChairman(id){
+  if(!confirm('Remove this SK Chairman account? They will no longer be able to log in.'))return;
+  const ch=chairmen.find(x=>x.id===id);
+  if(ch){delete ACCOUNTS[ch.username];chairmen.splice(chairmen.indexOf(ch),1);}
+  renderChairTable();
+  showToast('Chairman account removed.','ok');
+}
+function openEditChairDirect(brgy){
+  const el=document.getElementById('editChairBrgySel');
+  if(el){el.value=brgy;loadChairEdit();}
+  goPage('settings');
+  setTimeout(()=>{const ef=document.getElementById('chairEditForm');if(ef)ef.scrollIntoView({behavior:'smooth'});},300);
 }
 function openAddChair(){['cFN','cLN','cContact','cEmail','cUser','cPass'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});openModal('modalChair');}
 function saveChairman(){
@@ -1669,9 +1803,12 @@ async function submitReg(){
   if(!fn||!ln||!dob||!sex||!brgy||!purok||!mobile||!classif){err.textContent='Please fill in all required fields (marked with *).';err.style.display='block';return;}
   const age=parseInt(document.getElementById('rAge').value);
   if(!age||age<15||age>30){err.textContent='You must be 15–30 years old to register in the KK system.';err.style.display='block';return;}
+  const dup=members.find(x=>x.mobile===mobile);
+  if(dup){err.textContent='A member with mobile number '+mobile+' is already registered ('+dup.fn+' '+dup.ln+', '+dup.brgy+'). Please check if you are already registered.';err.style.display='block';return;}
   err.style.display='none';
   const rgender=document.getElementById('rGender').value;
-  const nm={fn,ln,mn:document.getElementById('rMN').value,suffix:document.getElementById('rSuffix').value,dob,age,sex,gender:rgender,civil:document.getElementById('rCivil').value,brgy,purok,addr:document.getElementById('rAddr').value,mobile,email:document.getElementById('rEmail').value,fb:document.getElementById('rFB').value,classif,school:document.getElementById('rSchool').value,year:document.getElementById('rYear').value,father:document.getElementById('rFather').value,fatherC:document.getElementById('rFatherC').value,mother:document.getElementById('rMother').value,motherC:document.getElementById('rMotherC').value,guard:document.getElementById('rGuard').value,guardC:document.getElementById('rGuardC').value,progs:document.getElementById('rProgs').value,skills:document.getElementById('rSkills').value,notes:'',status:'Active'};
+  const nm={fn,ln,mn:document.getElementById('rMN').value,suffix:document.getElementById('rSuffix').value,dob,age,sex,gender:rgender,civil:document.getElementById('rCivil').value,brgy,purok,addr:document.getElementById('rAddr').value,mobile,email:document.getElementById('rEmail').value,fb:document.getElementById('rFB').value,classif,school:document.getElementById('rSchool').value,year:document.getElementById('rYear').value,father:document.getElementById('rFather').value,fatherC:document.getElementById('rFatherC').value,mother:document.getElementById('rMother').value,motherC:document.getElementById('rMotherC').value,guard:document.getElementById('rGuard').value,guardC:document.getElementById('rGuardC').value,progs:document.getElementById('rProgs').value,skills:document.getElementById('rSkills').value,notes:'',
+    isPWD:document.getElementById('rPWD').value,is4Ps:document.getElementById('r4Ps').value,isIP:document.getElementById('rIP').value,isSolo:document.getElementById('rSolo').value,isVoter:document.getElementById('rVoter').value,isScholar:document.getElementById('rScholar').value,status:'Pending'};
   try{const saved=await dbSave(nm);members.push(saved);}catch(e){members.push({...nm,id:'local-'+Date.now()});}
   document.getElementById('regFormWrap').classList.add('hidden');
   document.getElementById('regSuccess').classList.remove('hidden');
@@ -1686,6 +1823,7 @@ function copyLink(){
 
 // ═══════════ PRINT ═══════════
 function doPrint(){window.print();}
+function printProfile(){const pb=document.getElementById('profileBody');if(!pb)return;const w=window.open('','_blank','width=800,height=600');w.document.write('<html><head><title>KK Member Profile — SK Talibon</title><style>body{font-family:sans-serif;font-size:13px;padding:24px;color:#333;} .pf-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;} .lbl{font-size:10px;color:#666;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;} .val{color:#1e293b;margin-bottom:8px;} .pf-section-title{font-size:11px;font-weight:700;color:#1a56db;text-transform:uppercase;padding:8px 0 4px;border-bottom:2px solid #e0e7ff;margin-bottom:6px;grid-column:1/-1;} .parent-box{background:#f9fafb;border-radius:8px;padding:12px;margin-top:10px;} .parent-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;} @media print{button{display:none;}}</style></head><body>'+pb.innerHTML+'<br><br><small style="color:#999;">Printed '+new Date().toLocaleDateString('en-PH')+' — SK Talibon Federation KK Profiling System</small><script>window.onload=function(){window.print();}<\/script></body></html>');w.document.close();}
 
 // ═══════════ MODALS ═══════════
 function openModal(id){document.getElementById(id).classList.add('open');}
@@ -1881,9 +2019,15 @@ function renderChairInfoGrid(){
 }
 
 // ═══════════ DATABASE LAYER ═══════════
+function calcAgeFromDOB(dob){
+  if(!dob)return null;
+  const age=Math.floor((new Date()-new Date(dob))/(365.25*24*3600*1000));
+  return isNaN(age)?null:age;
+}
 function mapRow(r){
+  const computedAge=r.dob?calcAgeFromDOB(r.dob):null;
   return {id:r.id,fn:r.fn||'',ln:r.ln||'',mn:r.mn||'',suffix:r.suffix||'',
-    dob:r.dob||'',age:r.age||0,sex:r.sex||'',gender:r.gender||'',
+    dob:r.dob||'',age:computedAge||r.age||0,sex:r.sex||'',gender:r.gender||'',
     civil:r.civil||'',brgy:r.brgy||'',purok:r.purok||'',addr:r.addr||'',
     mobile:r.mobile||'',email:r.email||'',fb:r.fb||'',
     classif:r.classif||'',school:r.school||'',year:r.year_level||'',
@@ -1891,16 +2035,17 @@ function mapRow(r){
     mother:r.mother||'',motherC:r.mother_c||'',
     guard:r.guard||'',guardC:r.guard_c||'',
     progs:r.progs||'',skills:r.skills||'',notes:r.notes||'',
+    isPWD:r.is_pwd||'',is4Ps:r.is_4ps||'',isIP:r.is_ip||'',isSolo:r.is_solo||'',isVoter:r.is_voter||'',isScholar:r.is_scholar||'',
     status:r.status||'Active'};
 }
 async function loadAllData(){
   if(!SB){renderAll();return;}
   try{
     showToast('Loading data from database...','info');
-    let mq=SB.from('members').select('*').order('created_at',{ascending:false});
+    let mq=SB.from('members').select('*').order('created_at',{ascending:false}).limit(10000);
     if(CR==='chairman'&&CB)mq=mq.eq('brgy',CB);
     const [mr,ar,fr,asr]=await Promise.all([mq,
-      SB.from('announcements').select('*').order('created_at',{ascending:false}),
+      (CR==='federation'?SB.from('announcements').select('*').order('created_at',{ascending:false}):SB.from('announcements').select('*').or('sent_brgy.eq.'+CB+',sent_brgy.eq.Federation,sent_brgy.is.null').order('created_at',{ascending:false})),
       SB.from('feedbacks').select('*').order('created_at',{ascending:false}),
       SB.from('assessments').select('*').order('created_at',{ascending:false})]);
     if(mr.error)throw mr.error;
@@ -1908,7 +2053,8 @@ async function loadAllData(){
     announcements=(ar.data||[]).map(r=>({id:r.id,type:r.type,title:r.title,body:r.body,
       venue:r.venue||'',eventDate:r.event_date||'',channels:r.channels||[],
       audience:r.audience||{},recipients:r.recipients||0,status:r.status,
-      date:new Date(r.created_at).toLocaleDateString('en-PH'),sentBy:r.sent_by}));
+      date:new Date(r.created_at).toLocaleDateString('en-PH'),sentBy:r.sent_by,
+      sentBrgy:r.sent_brgy||'Federation'}));
     feedbacks=(fr.data||[]).map(r=>({id:r.id,type:'program',author:r.author,brgy:r.brgy,
       prog:r.prog,rating:r.rating,comment:r.comment,
       date:new Date(r.created_at).toLocaleDateString('en-PH')}));
@@ -1927,7 +2073,8 @@ async function dbSave(m){
     mobile:m.mobile,email:m.email,fb:m.fb,classif:m.classif,school:m.school,
     year_level:m.year,father:m.father,father_c:m.fatherC,mother:m.mother,
     mother_c:m.motherC,guard:m.guard,guard_c:m.guardC,
-    progs:m.progs,skills:m.skills,notes:m.notes,status:m.status||'Active'};
+    progs:m.progs,skills:m.skills,notes:m.notes,status:m.status||'Active',
+    is_pwd:m.isPWD||'',is_4ps:m.is4Ps||'',is_ip:m.isIP||'',is_solo:m.isSolo||'',is_voter:m.isVoter||'',is_scholar:m.isScholar||''};
   if(m.id&&!String(m.id).startsWith('local')){
     const {error}=await SB.from('members').update(row).eq('id',m.id);
     if(error)throw error;return m;
@@ -1944,7 +2091,8 @@ async function dbAnnounce(a){
   if(!SB)return;
   await SB.from('announcements').insert({type:a.type,title:a.title,body:a.body,
     venue:a.venue||'',event_date:a.eventDate||'',channels:a.channels,
-    audience:a.audience,recipients:a.recipients,status:a.status,sent_by:a.sentBy});
+    audience:a.audience,recipients:a.recipients,status:a.status,
+    sent_by:a.sentBy,sent_brgy:a.sentBrgy||'Federation'});
 }
 async function dbFeedback(f){
   if(!SB)return;
@@ -1956,6 +2104,56 @@ async function dbAssess(a){
   await SB.from('assessments').insert({member_id:String(a.memberId),
     member_name:a.memberName,brgy:a.brgy,chair_name:a.chairName,
     rating:a.rating,participation:a.participation,standing:a.status,remark:a.remark});
+}
+
+function exportCSV(){
+  const q=(document.getElementById('mSearch')?.value||'').toLowerCase();
+  const fb=document.getElementById('mFBrgy')?.value||'';
+  const fc=document.getElementById('mFClassif')?.value||'';
+  const fs=document.getElementById('mFSex')?.value||'';
+  const fa=document.getElementById('mFAge')?.value||'';
+  const fst=document.getElementById('mFStatus')?.value||'';
+  const fg2=document.getElementById('mFGender')?.value||'';
+  let data=scopedMembers();
+  if(fb)data=data.filter(m=>m.brgy===fb);
+  if(fc)data=data.filter(m=>m.classif===fc);
+  if(fs)data=data.filter(m=>m.sex===fs);
+  if(fa){const[lo,hi]=fa.split('-').map(Number);data=data.filter(m=>m.age>=lo&&m.age<=hi);}
+  if(fst)data=data.filter(m=>m.status===fst);
+  if(fg2)data=data.filter(m=>m.gender===fg2);
+  if(q)data=data.filter(m=>(m.fn+' '+m.ln+' '+m.brgy+' '+m.purok+' '+m.mobile+' '+m.classif).toLowerCase().includes(q));
+  const headers=['KK ID','Last Name','First Name','Middle Name','Suffix','Date of Birth','Age','Sex at Birth','Gender Identity','Civil Status','Barangay','Purok/Sitio','Address','Mobile','Email','Facebook','Classification','School','Year Level','Status','Father Name','Father Contact','Mother Name','Mother Contact','Guardian Name','Guardian Contact','Programs Joined','Skills/Interests','Notes'];
+  const rows=data.map((m,i)=>[
+    'KK-'+String(i+1).padStart(4,'0'),
+    m.ln,m.fn,m.mn||'',m.suffix||'',m.dob||'',m.age,m.sex||'',m.gender||'',m.civil||'',
+    m.brgy,m.purok,m.addr||'',m.mobile,m.email||'',m.fb||'',
+    m.classif,m.school||'',m.year||'',m.status,
+    m.father||'',m.fatherC||'',m.mother||'',m.motherC||'',m.guard||'',m.guardC||'',
+    m.progs||'',m.skills||'',m.notes||''
+  ].map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(','));
+  const csv='\uFEFF'+headers.map(h=>'"'+h+'"').join(',')+'
+'+rows.join('
+');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download='KK_Members_Talibon_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();URL.revokeObjectURL(url);
+  showToast('Exported '+data.length+' members to CSV!','ok');
+}
+
+async function approveMember(id){
+  const m=members.find(x=>String(x.id)===String(id));if(!m)return;
+  if(!confirm('Approve '+m.fn+' '+m.ln+' as an active KK member?'))return;
+  try{
+    if(SB&&!String(id).startsWith('local')){
+      const {error}=await SB.from('members').update({status:'Active'}).eq('id',id);
+      if(error)throw error;
+    }
+    m.status='Active';
+    filterMembers();renderDashboard();
+    showToast(m.fn+' '+m.ln+' approved as Active member!','ok');
+  }catch(e){showToast('Approve failed: '+e.message,'err');}
 }
 
 function renderAll(){renderDashboard();filterMembers();renderChairTable();renderAnnouncements();updateRecipientCount();}
