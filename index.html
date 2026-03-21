@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>KK Profiling System — SK Talibon</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -343,6 +343,12 @@ create policy "open" on assessments for all using (true) with check (true);</pre
     <div id="setupLoading" style="display:none;font-size:13px;color:var(--gray-s);margin-bottom:10px;align-items:center;gap:8px;"><div class="spinner"></div> Testing connection...</div>
     <button class="btn btn-primary" style="width:100%;justify-content:center;padding:10px;" onclick="setupSupabase()">Connect &amp; Continue</button>
     <p style="font-size:11px;color:var(--gray-xs);text-align:center;margin-top:10px;line-height:1.7;">Credentials are saved on this device only. Free tier supports up to 50,000 rows and 500MB storage.</p>
+    <div id="fileProtocolWarning" style="display:none;margin-top:12px;padding:10px 14px;background:#fef3c7;border-radius:8px;border:1px solid #fde68a;">
+      <div style="font-size:12px;font-weight:600;color:#92400e;margin-bottom:4px;">⚠️ Opening from your computer (file://)</div>
+      <div style="font-size:11.5px;color:#92400e;line-height:1.7;">Your browser blocks database connections when running from a local file. To fix this, either:<br>
+      <strong>Option A:</strong> Upload to <strong>GitHub Pages</strong> (free hosting — see guide).<br>
+      <strong>Option B:</strong> Use the <strong>VS Code Live Server</strong> extension to run it locally.</div>
+    </div>
   </div>
 </div>
 <div class="toast" id="toast"></div>
@@ -362,13 +368,13 @@ create policy "open" on assessments for all using (true) with check (true);</pre
       <button class="rs-btn" onclick="setLoginRole('chairman',this)">SK Barangay Chairman</button>
     </div>
     <div id="loginErr" style="display:none;font-size:12px;color:var(--red);background:var(--red-l);padding:8px 12px;border-radius:var(--r);margin-bottom:10px;">Invalid username or password.</div>
-    <div class="fg" style="margin-bottom:10px;"><label>Username</label><input type="text" id="lUser" value="federation" placeholder="Username"></div>
-    <div class="fg" style="margin-bottom:16px;"><label>Password</label><input type="password" id="lPass" value="talibon2025" placeholder="Password" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <div class="fg" style="margin-bottom:10px;"><label>Username</label><input type="text" id="lUser" placeholder="Enter your username" autocomplete="username"></div>
+    <div class="fg" style="margin-bottom:16px;"><label>Password</label><input type="password" id="lPass" placeholder="Enter your password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"></div>
     <button class="btn btn-primary" style="width:100%;justify-content:center;padding:10px;" onclick="doLogin()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
       Sign In
     </button>
-    <div class="login-hint">Admin: federation / talibon2025<br>Chairman demo: poblacion / chair2025<br>(Any barangay key in lowercase, e.g. san_jose)</div>
+    <div class="login-hint">Contact the SK Federation President if you need your login credentials.</div>
   </div>
 </div>
 
@@ -556,7 +562,7 @@ create policy "open" on assessments for all using (true) with check (true);</pre
           <div class="table-wrap">
             <table>
               <thead><tr>
-                <th style="width:190px;">Name</th><th>Age</th><th>Sex</th><th>Gender</th>
+                <th style="width:190px;">Name</th><th>Age</th><th>Sex at Birth</th><th>Gender Identity</th>
                 <th>Barangay</th><th>Purok</th><th>Classification</th>
                 <th>Mobile</th><th class="no-print">Actions</th>
               </tr></thead>
@@ -1062,7 +1068,7 @@ function showToast(msg,type='ok'){
 }
 function initSupabase(){
   const url=localStorage.getItem('sb_url'),key=localStorage.getItem('sb_key');
-  if(url&&key){try{SB=window.supabase.createClient(url,key);return true;}catch(e){return false;}}
+  if(url&&key){try{SB=window.supabase.createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false},realtime:{params:{eventsPerSecond:0}},global:{fetch:(...a)=>fetch(...a)}});return true;}catch(e){return false;}}
   return false;
 }
 async function setupSupabase(){
@@ -1074,8 +1080,8 @@ async function setupSupabase(){
   if(!url.startsWith('https://')){err.textContent='URL must start with https://';err.style.display='block';return;}
   document.getElementById('setupLoading').style.display='flex';
   try{
-    SB=window.supabase.createClient(url,key);
-    const {error}=await SB.from('members').select('id').limit(1);
+    SB=window.supabase.createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false},realtime:{params:{eventsPerSecond:0}},global:{fetch:(...a)=>fetch(...a)}});
+    const {data,error}=await SB.from('members').select('id').limit(1);
     if(error)throw new Error(error.message);
     localStorage.setItem('sb_url',url);localStorage.setItem('sb_key',key);
     document.getElementById('setupLoading').style.display='none';
@@ -1084,7 +1090,11 @@ async function setupSupabase(){
     showToast('Database connected successfully!','ok');
   }catch(e){
     document.getElementById('setupLoading').style.display='none';
-    err.textContent='Connection failed: '+e.message+'. Check your URL and Key.';err.style.display='block';SB=null;
+    let emsg=e.message||String(e);
+    if(emsg.includes('DataClone')||emsg.includes('postMessage')||emsg.includes('BroadcastChannel')){
+      emsg='Browser security blocked the connection. Please open this file through a web server or GitHub Pages — not directly from your computer. See instructions below.';
+    }
+    err.innerHTML=emsg;err.style.display='block';SB=null;
   }
 }
 function copySQL(){navigator.clipboard.writeText(document.getElementById('sqlBlock').textContent).then(()=>showToast('SQL copied!','ok'));}
@@ -1099,6 +1109,10 @@ function disconnectDB(){
 
 // ═══════════ INIT ═══════════
 document.addEventListener('DOMContentLoaded',()=>{
+  if(location.protocol==='file:'){
+    const w=document.getElementById('fileProtocolWarning');
+    if(w)w.style.display='block';
+  }
   const selIds=['mBrgy','cBrgy','mFBrgy','rBrgy','fbBrgyFilter','rptBrgy','audBrgy','annoFilterBrgy','resetChairSel','editChairBrgySel'];
   selIds.forEach(sid=>{
     const el=document.getElementById(sid);
@@ -1111,7 +1125,26 @@ document.addEventListener('DOMContentLoaded',()=>{
   if(params.get('form')==='register'){showRegForm();return;}
   if(initSupabase()){
     document.getElementById('setupScreen').classList.add('hidden');
-    document.getElementById('loginScreen').classList.remove('hidden');
+    // Restore session if user was previously logged in
+    const savedUser=localStorage.getItem('session_user');
+    if(savedUser&&ACCOUNTS[savedUser]){
+      // Silently restore session
+      const acc=ACCOUNTS[savedUser];
+      CU=savedUser;CR=acc.role;CB=acc.brgy;
+      document.getElementById('sideAv').textContent=acc.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+      document.getElementById('sideUserName').textContent=acc.displayName||acc.name;
+      document.getElementById('sideUserRole').textContent=CR==='federation'?'Federation Administrator':'SK Chairman · '+CB;
+      document.querySelectorAll('.admin-only').forEach(el=>el.classList.toggle('hidden',CR!=='federation'));
+      if(CR==='chairman'&&CB){
+        document.getElementById('mBrgy').value=CB;
+        document.getElementById('mBrgy').disabled=true;
+      }
+      document.getElementById('loginScreen').classList.add('hidden');
+      document.getElementById('appShell').classList.remove('hidden');
+      loadAllData();
+    } else {
+      document.getElementById('loginScreen').classList.remove('hidden');
+    }
   } else {
     document.getElementById('setupScreen').classList.remove('hidden');
     document.getElementById('loginScreen').classList.add('hidden');
@@ -1122,8 +1155,9 @@ document.addEventListener('DOMContentLoaded',()=>{
 // ═══════════ AUTH ═══════════
 function setLoginRole(r,btn){
   document.querySelectorAll('.rs-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');
-  if(r==='federation'){document.getElementById('lUser').value='federation';document.getElementById('lPass').value='talibon2025';}
-  else{document.getElementById('lUser').value='poblacion';document.getElementById('lPass').value='chair2025';}
+  document.getElementById('lUser').value='';
+  document.getElementById('lPass').value='';
+  document.getElementById('lUser').focus();
 }
 
 function doLogin(){
@@ -1134,6 +1168,7 @@ function doLogin(){
   const isMaster=(u==='federation'&&p===MASTER_PASS);
   if(!acc||(!isMaster&&acc.pass!==p)){document.getElementById('loginErr').style.display='block';return;}
   CU=u;CR=acc.role;CB=acc.brgy;
+  localStorage.setItem('session_user',u);
   document.getElementById('sideAv').textContent=acc.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
   document.getElementById('sideUserName').textContent=acc.name;
   document.getElementById('sideUserRole').textContent=CR==='federation'?'Federation Administrator':'SK Chairman · '+CB;
@@ -1151,6 +1186,7 @@ function doLogin(){
 function doLogout(){
   if(!confirm('Sign out of the KK Profiling System?'))return;
   CU=null;CR=null;CB=null;
+  localStorage.removeItem('session_user');
   document.getElementById('appShell').classList.add('hidden');
   document.getElementById('loginScreen').classList.remove('hidden');
   document.getElementById('lPass').value='';
@@ -1228,14 +1264,15 @@ function filterMembers(){
   if(!data.length){tb.innerHTML=`<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--gray-s);">No members found.</td></tr>`;return;}
   tb.innerHTML=data.map(m=>`<tr>
     <td><div class="td-name"><div class="av av-blue">${m.fn[0]}${m.ln[0]}</div><div><div style="font-weight:500;">${m.fn} ${m.mn?m.mn[0]+'. ':''}${m.ln}</div><div style="font-size:11px;color:var(--gray-s);">${m.email||m.mobile}</div></div></div></td>
-    <td>${m.age}</td><td>${m.sex}</td>
+    <td>${m.age}</td><td style="font-size:11.5px;">${m.sex||'—'}</td><td style="font-size:11.5px;">${m.gender||'—'}</td>
     <td style="font-size:12px;">${m.brgy}</td>
     <td style="font-size:12px;">${m.purok}</td>
     <td><span class="pill ${CLASSIF_COLORS[m.classif]||'pill-gray'}">${m.classif}</span></td>
     <td style="font-size:12px;">${m.mobile}</td>
     <td class="no-print" style="white-space:nowrap;">
-      <button class="btn btn-outline btn-xs" onclick="viewProfile(${m.id})" style="margin-right:3px;">View</button>
-      ${CR==='federation'?`<button class="btn btn-danger btn-xs" onclick="delMember(${m.id})">Remove</button>`:''}
+      <button class="btn btn-outline btn-xs" onclick="viewProfile('${m.id}')" style="margin-right:3px;">View</button>
+      <button class="btn btn-outline btn-xs" onclick="openEditMember('${m.id}')" style="margin-right:3px;">Edit</button>
+      ${CR==='federation'?`<button class="btn btn-danger btn-xs" onclick="delMember('${m.id}')">Remove</button>`:''}
     </td>
   </tr>`).join('');
 }
@@ -1264,7 +1301,7 @@ async function saveMember(){
   const btn=document.querySelector('#modalMember .btn-primary');if(btn)btn.disabled=true;
   try{
     const saved=await dbSave({...m,id:editingMemberId||null});
-    if(editingMemberId){const i=members.findIndex(x=>x.id===editingMemberId);if(i>=0)members[i]=saved;}
+    if(editingMemberId){const i=members.findIndex(x=>String(x.id)===String(editingMemberId));if(i>=0)members[i]=saved;}
     else{members.unshift(saved);}
     showToast(editingMemberId?'Profile updated!':'Member saved to database!','ok');
   }catch(e){showToast('Save error: '+e.message,'err');}
@@ -1272,10 +1309,10 @@ async function saveMember(){
   closeModal('modalMember');filterMembers();renderDashboard();updateRecipientCount();
 }
 
-async function delMember(id){if(!confirm('Remove this member from the database? This cannot be undone.'))return;try{await dbDel(id);members=members.filter(m=>m.id!==id);filterMembers();renderDashboard();showToast('Member removed.','ok');}catch(e){showToast('Delete failed: '+e.message,'err');}}
+async function delMember(id){if(!confirm('Remove this member from the database? This cannot be undone.'))return;try{await dbDel(id);members=members.filter(m=>String(m.id)!==String(id));filterMembers();renderDashboard();showToast('Member removed.','ok');}catch(e){showToast('Delete failed: '+e.message,'err');}}
 
 function viewProfile(id){
-  const m=members.find(x=>x.id===id);if(!m)return;
+  const m=members.find(x=>String(x.id)===String(id));if(!m)return;
   const bg=m.sex==='Female'?'var(--green-l)':m.sex==='Male'?'var(--blue-l)':'var(--purple-l)';
   const col=m.sex==='Female'?'var(--green)':m.sex==='Male'?'var(--blue-d)':'var(--purple)';
   document.getElementById('profileBody').innerHTML=`
@@ -1315,6 +1352,41 @@ function viewProfile(id){
     ${m.notes?`<div style="margin-top:12px;padding:10px 14px;background:var(--amber-l);border-radius:var(--r);font-size:12.5px;color:var(--amber);">${m.notes}</div>`:''}
   `;
   openModal('modalProfile');
+}
+
+function openEditMember(id){
+  const m=members.find(x=>String(x.id)===String(id));if(!m)return;
+  editingMemberId=id;
+  document.getElementById('mModalTitle').textContent='Edit KK Member';
+  document.getElementById('mFN').value=m.fn||'';
+  document.getElementById('mLN').value=m.ln||'';
+  document.getElementById('mMN').value=m.mn||'';
+  document.getElementById('mSuffix').value=m.suffix||'';
+  document.getElementById('mDOB').value=m.dob||'';
+  document.getElementById('mAge').value=m.age||'';
+  document.getElementById('mSex').value=m.sex||'';
+  document.getElementById('mGender').value=m.gender||'';
+  document.getElementById('mCivil').value=m.civil||'Single';
+  document.getElementById('mBrgy').value=m.brgy||'';
+  if(CR==='chairman')document.getElementById('mBrgy').disabled=true;
+  document.getElementById('mPurok').value=m.purok||'';
+  document.getElementById('mAddr').value=m.addr||'';
+  document.getElementById('mMobile').value=m.mobile||'';
+  document.getElementById('mEmail').value=m.email||'';
+  document.getElementById('mFB').value=m.fb||'';
+  document.getElementById('mClassif').value=m.classif||'';
+  document.getElementById('mSchool').value=m.school||'';
+  document.getElementById('mYearLevel').value=m.year||'';
+  document.getElementById('mFather').value=m.father||'';
+  document.getElementById('mFatherC').value=m.fatherC||'';
+  document.getElementById('mMother').value=m.mother||'';
+  document.getElementById('mMotherC').value=m.motherC||'';
+  document.getElementById('mGuard').value=m.guard||'';
+  document.getElementById('mGuardC').value=m.guardC||'';
+  document.getElementById('mProgs').value=m.progs||'';
+  document.getElementById('mSkills').value=m.skills||'';
+  document.getElementById('mNotes').value=m.notes||'';
+  openModal('modalMember');
 }
 
 // ═══════════ ANNOUNCEMENTS ═══════════
@@ -1519,8 +1591,8 @@ async function submitFeedback(){
 }
 async function submitAssessment(){
   if(!assessRatingVal){alert('Please select a rating.');return;}
-  const mid=parseInt(document.getElementById('assessMemberSel').value);
-  const mem=members.find(m=>m.id===mid);
+  const mid=document.getElementById('assessMemberSel').value;
+  const mem=members.find(m=>String(m.id)===String(mid));
   const ao={type:'assessment',memberId:mid,memberName:mem?mem.fn+' '+mem.ln:'Unknown',brgy:CB||'',chairName:ACCOUNTS[CU]?.name||CU,rating:assessRatingVal,participation:document.getElementById('assessPart').value,status:document.getElementById('assessStatus').value,remark:document.getElementById('assessRemark').value,date:new Date().toLocaleDateString('en-PH')};
   assessments.unshift(ao);
   try{await dbAssess(ao);showToast('Assessment saved!','ok');}catch(e){showToast('Saved locally. DB: '+e.message,'err');}
@@ -1575,7 +1647,7 @@ function renderReports(){
       <div class="card"><div class="section-title">By Age Group</div>${Object.entries(byAge).map(([k,v])=>`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:12.5px;"><span>${k}</span><strong>${v}</strong></div>`).join('')}<div style="margin-top:12px;"><div class="section-title">By Sex at Birth</div>${Object.entries(bySex).filter(([,v])=>v>0).map(([k,v])=>`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:12.5px;"><span>${k}</span><strong>${v}</strong></div>`).join('')}</div><div style="margin-top:10px;"><div class="section-title">By Gender Identity</div>${Object.entries(byGender).filter(([,v])=>v>0).map(([k,v])=>`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:12.5px;"><span>${k}</span><strong>${v}</strong></div>`).join('')}${Object.values(byGender).every(v=>v===0)?'<div style="font-size:11px;color:var(--gray-xs);">No gender identity data recorded yet.</div>':''}</div></div>
     </div>
     <div class="card" style="padding:0;"><div style="padding:12px 18px;border-bottom:1px solid var(--border);font-size:13px;font-weight:600;color:#1e293b;">Member List — ${data.length} records</div>
-      <div class="table-wrap"><table><thead><tr><th>Name</th><th>Age</th><th>Sex</th><th>Gender</th><th>Barangay</th><th>Purok</th><th>Classification</th><th>Mobile</th></tr></thead>
+      <div class="table-wrap"><table><thead><tr><th>Name</th><th>Age</th><th>Sex at Birth</th><th>Gender Identity</th><th>Barangay</th><th>Purok</th><th>Classification</th><th>Mobile</th></tr></thead>
       <tbody>${data.map(m=>`<tr><td>${m.fn} ${m.mn?m.mn[0]+'. ':''}${m.ln}</td><td>${m.age}</td><td>${m.sex||'—'}</td><td style='font-size:11px;'>${m.gender||'—'}</td><td>${m.brgy}</td><td>${m.purok}</td><td>${m.classif}</td><td style="font-size:11px;">${m.mobile}</td></tr>`).join('')}</tbody></table></div>
     </div>`;
 }
