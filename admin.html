@@ -8484,9 +8484,13 @@ async function _saveForm(status) {
     brgy: brgy || null,
     fiscal_year: parseInt(formData.year||formData.fiscal_year||new Date().getFullYear()),
     form_data: formData,
-    content_json: formData   // keep backward compat
+    content_json: formData,   // keep backward compat
+    owner_id: SB.auth.getUser ? (await SB.auth.getUser())?.data?.user?.id || null : null
   };
   if (!SB) { showToast('Not connected to database.','err'); return; }
+  // Disable save buttons during async to prevent double-submit
+  const saveBtns = document.querySelectorAll('#modalFormEditor .modal-footer button');
+  saveBtns.forEach(b => b.disabled = true);
   try {
     if (_feCurrentDocId) {
       const {error} = await SB.from('sk_documents').update(row).eq('id', _feCurrentDocId);
@@ -8506,7 +8510,11 @@ async function _saveForm(status) {
     if (status !== 'draft') closeFormEditor();
     renderSKDocuments();
     updateDocsDueBadge();
-  } catch(e) { showToast('Save error: '+e.message,'err'); }
+  } catch(e) {
+    showToast('Save error: '+e.message,'err');
+  } finally {
+    saveBtns.forEach(b => b.disabled = false);
+  }
 }
 
 // ── PRINT FUNCTION ────────────────────────────────────────────────────────────
