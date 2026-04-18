@@ -3,8 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- SK Federation System — Talibon, Bohol — Production Build -->
 <title>SK Federation System — SK Talibon</title>
-<script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -245,7 +246,6 @@ tr:hover td{background:#f8fafc;}
 .setup-card{background:var(--white);border-radius:20px;padding:34px;width:540px;max-width:100%;}
 .setup-step{display:flex;align-items:flex-start;gap:12px;margin-bottom:16px;padding:14px 16px;background:var(--gray-l);border-radius:var(--r-lg);border:1px solid var(--border);}
 .setup-num{width:26px;height:26px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;}
-.sql-block{font-family:var(--mono);background:#1e293b;color:#7dd3fc;padding:10px 14px;border-radius:var(--r);font-size:11px;margin-top:8px;white-space:pre;overflow-x:auto;line-height:1.6;}
 .spinner{width:16px;height:16px;border:2px solid var(--border-m);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0;}
 @keyframes spin{to{transform:rotate(360deg);}}
 .toast{position:fixed;bottom:22px;right:22px;background:#1e293b;color:#fff;padding:11px 16px;border-radius:10px;font-size:13px;z-index:9999;display:none;align-items:center;gap:8px;max-width:320px;}
@@ -257,99 +257,39 @@ tr:hover td{background:#f8fafc;}
 </head>
 <body>
 
-<!-- SETUP SCREEN -->
+<!-- SETUP SCREEN — Production mode: shown only if credentials not yet saved on this device -->
 <div id="setupScreen" class="setup-wrap hidden">
   <div class="setup-card">
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px;">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
       <div style="width:42px;height:42px;background:var(--blue-d);border-radius:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
         <svg viewBox="0 0 24 24" fill="#fff" style="width:22px;height:22px;"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
       </div>
-      <div><div style="font-size:17px;font-weight:700;color:#1e293b;">Database Setup</div>
-      <div style="font-size:12px;color:var(--gray-s);">SK Federation System — SK Talibon (one-time setup)</div></div>
-    </div>
-    <p style="font-size:13px;color:var(--gray-s);margin:12px 0 18px;line-height:1.7;">Connect a free Supabase database so all 25 chairmen share the same live data. Takes about 10 minutes.</p>
-
-    <div class="setup-step">
-      <div class="setup-num">1</div>
-      <div style="flex:1;">
-        <div style="font-size:13px;font-weight:600;color:#1e293b;margin-bottom:3px;">Create a free Supabase project</div>
-        <div style="font-size:12px;color:var(--gray-s);line-height:1.6;">Go to <a href="https://supabase.com" target="_blank" style="color:var(--blue);">supabase.com</a> → Sign up with Google → Create new project named <strong>kk-talibon</strong> → set any database password → wait ~2 min for it to start.</div>
+      <div>
+        <div style="font-size:17px;font-weight:700;color:#1e293b;">SK Federation System</div>
+        <div style="font-size:12px;color:var(--gray-s);">SK Federation — Talibon, Bohol</div>
       </div>
     </div>
 
-    <div class="setup-step">
-      <div class="setup-num">2</div>
-      <div style="flex:1;">
-        <div style="font-size:13px;font-weight:600;color:#1e293b;margin-bottom:3px;">Create the database tables</div>
-        <div style="font-size:12px;color:var(--gray-s);line-height:1.6;">In your Supabase project → click <strong>SQL Editor</strong> (left sidebar) → <strong>New query</strong> → paste the SQL below → click <strong>RUN</strong>.</div>
-        <pre class="sql-block" id="sqlBlock">-- Run this in Supabase SQL Editor
-create table if not exists members (
-  id uuid default gen_random_uuid() primary key,
-  fn text, ln text, mn text, suffix text,
-  dob text, age integer, sex text, gender text,
-  civil text, brgy text, purok text, addr text,
-  mobile text, email text, fb text,
-  classif text, school text, year_level text,
-  father text, father_c text,
-  mother text, mother_c text,
-  guard text, guard_c text,
-  progs text, skills text, notes text,
-  status text default 'Active',
-  created_at timestamptz default now()
-);
-create table if not exists announcements (
-  id uuid default gen_random_uuid() primary key,
-  type text, title text, body text,
-  venue text, event_date text,
-  channels text[], audience jsonb,
-  recipients integer, status text,
-  sent_by text, sent_brgy text,
-  created_at timestamptz default now()
-);
-create table if not exists feedbacks (
-  id uuid default gen_random_uuid() primary key,
-  type text, author text, brgy text,
-  prog text, rating integer, comment text,
-  created_at timestamptz default now()
-);
-create table if not exists assessments (
-  id uuid default gen_random_uuid() primary key,
-  member_id text, member_name text, brgy text,
-  chair_name text, rating integer,
-  participation text, standing text, remark text,
-  created_at timestamptz default now()
-);
-alter table members enable row level security;
-alter table announcements enable row level security;
-alter table feedbacks enable row level security;
-alter table assessments enable row level security;
-create policy "open" on members for all using (true) with check (true);
-create policy "open" on announcements for all using (true) with check (true);
-create policy "open" on feedbacks for all using (true) with check (true);
-create policy "open" on assessments for all using (true) with check (true);</pre>
-        <button class="btn btn-outline btn-sm" style="margin-top:8px;" onclick="copySQL()">Copy SQL</button>
+    <!-- Production notice — replaces legacy SQL setup instructions -->
+    <div style="background:#fef3c7;border:1px solid #f59e0b;border-radius:var(--r-lg);padding:14px 16px;margin-bottom:20px;">
+      <div style="font-size:12.5px;font-weight:700;color:#92400e;margin-bottom:6px;">⚠️ First-time device setup</div>
+      <div style="font-size:12px;color:#78350f;line-height:1.75;">
+        This system is already connected to the production Supabase database for SK Federation Talibon.<br>
+        <strong>Do NOT run any legacy SQL setup scripts</strong> — the database schema, RLS policies, and all user accounts are already configured.<br><br>
+        Enter the Supabase credentials below to link this device. Contact the SK Federation President if you need the credentials.
       </div>
     </div>
 
-    <div class="setup-step">
-      <div class="setup-num">3</div>
-      <div style="flex:1;">
-        <div style="font-size:13px;font-weight:600;color:#1e293b;margin-bottom:3px;">Enter your Supabase credentials</div>
-        <div style="font-size:12px;color:var(--gray-s);line-height:1.6;">In Supabase → go to <strong>Project Settings → API</strong> → copy the <strong>Project URL</strong> and <strong>anon public key</strong>.</div>
-      </div>
-    </div>
-
-    <div class="fg" style="margin-bottom:10px;"><label>Project URL</label><input type="text" id="sbUrl" placeholder="https://xxxxxxxxxxxx.supabase.co"></div>
-    <div class="fg" style="margin-bottom:14px;"><label>Anon / Public Key</label><input type="text" id="sbKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."></div>
+    <div class="fg" style="margin-bottom:10px;"><label>Project URL</label><input type="text" id="sbUrl" placeholder="https://xxxxxxxxxxxx.supabase.co" autocomplete="off" spellcheck="false"></div>
+    <div class="fg" style="margin-bottom:14px;"><label>Anon / Public Key</label><input type="text" id="sbKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." autocomplete="off" spellcheck="false"></div>
     <div id="setupErr" style="display:none;font-size:12px;color:var(--red);background:var(--red-l);padding:8px 12px;border-radius:var(--r);margin-bottom:12px;"></div>
     <div id="setupLoading" style="display:none;font-size:13px;color:var(--gray-s);margin-bottom:10px;align-items:center;gap:8px;"><div class="spinner"></div> Testing connection...</div>
     <button class="btn btn-primary" style="width:100%;justify-content:center;padding:10px;" onclick="setupSupabase()">Connect &amp; Continue</button>
-    <p style="font-size:11px;color:var(--gray-xs);text-align:center;margin-top:10px;line-height:1.7;">Credentials are saved on this device only. Free tier supports up to 50,000 rows and 500MB storage.</p>
+    <p style="font-size:11px;color:var(--gray-xs);text-align:center;margin-top:10px;line-height:1.7;">Credentials are saved on this device only in localStorage. Never share your anon key publicly.</p>
     <div id="fileProtocolWarning" style="display:none;margin-top:12px;padding:10px 14px;background:#fef3c7;border-radius:8px;border:1px solid #fde68a;">
       <div style="font-size:12px;font-weight:600;color:#92400e;margin-bottom:4px;">⚠️ Opening from your computer (file://)</div>
-      <div style="font-size:11.5px;color:#92400e;line-height:1.7;">Your browser blocks database connections when running from a local file. To fix this, either:<br>
-      <strong>Option A:</strong> Upload to <strong>GitHub Pages</strong> (free hosting — see guide).<br>
-      <strong>Option B:</strong> Use the <strong>VS Code Live Server</strong> extension to run it locally.</div>
+      <div style="font-size:11.5px;color:#92400e;line-height:1.7;">Your browser blocks database connections when running from a local file. Please open this system via <strong>GitHub Pages</strong>:<br>
+      <strong>https://skfederationoftalibon.github.io/kk-talibon/admin.html</strong></div>
     </div>
   </div>
 </div>
@@ -2375,14 +2315,15 @@ async function setupSupabase(){
     err.innerHTML=emsg;err.style.display='block';SB=null;
   }
 }
-function copySQL(){navigator.clipboard.writeText(document.getElementById('sqlBlock').textContent).then(()=>showToast('SQL copied!','ok'));}
+// copySQL() removed — legacy SQL setup no longer present in production
 function disconnectDB(){
-  if(!confirm('Disconnect from the database on this device?'))return;
+  if(!confirm('Remove saved database credentials from this device? You will need to re-enter them to use the system.'))return;
   localStorage.removeItem('sb_url');localStorage.removeItem('sb_key');SB=null;
   doLogout();
+  // Show setup screen so admin can re-enter production credentials
   document.getElementById('setupScreen').classList.remove('hidden');
   document.getElementById('loginScreen').classList.add('hidden');
-  showToast('Disconnected.','info');
+  showToast('Credentials removed from this device.','info');
 }
 
 // =========== INIT ===========
