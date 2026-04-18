@@ -1,7 +1,7 @@
 // SK Federation Talibon — Service Worker v2
 // Bump CACHE_NAME version on EVERY deployment of admin.html or index.html
 
-const CACHE_NAME = 'sk-talibon-v3';
+const CACHE_NAME = 'sk-talibon-v4';
 const OFFLINE_URL = '/';
 
 // Pin the exact Supabase CDN version to prevent silent breakage from floating @2 tag
