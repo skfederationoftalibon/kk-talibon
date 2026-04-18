@@ -242,10 +242,7 @@ tr:hover td{background:#f8fafc;}
 .send-progress{height:4px;background:var(--gray-m);border-radius:2px;overflow:hidden;margin-top:8px;}
 .send-bar{height:100%;background:var(--blue);border-radius:2px;transition:width .4s ease;}
 
-.setup-wrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:var(--blue-d);padding:24px;z-index:100;overflow-y:auto;}
-.setup-card{background:var(--white);border-radius:20px;padding:34px;width:540px;max-width:100%;}
-.setup-step{display:flex;align-items:flex-start;gap:12px;margin-bottom:16px;padding:14px 16px;background:var(--gray-l);border-radius:var(--r-lg);border:1px solid var(--border);}
-.setup-num{width:26px;height:26px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;}
+
 .spinner{width:16px;height:16px;border:2px solid var(--border-m);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0;}
 @keyframes spin{to{transform:rotate(360deg);}}
 .toast{position:fixed;bottom:22px;right:22px;background:#1e293b;color:#fff;padding:11px 16px;border-radius:10px;font-size:13px;z-index:9999;display:none;align-items:center;gap:8px;max-width:320px;}
@@ -257,42 +254,7 @@ tr:hover td{background:#f8fafc;}
 </head>
 <body>
 
-<!-- SETUP SCREEN — Production mode: shown only if credentials not yet saved on this device -->
-<div id="setupScreen" class="setup-wrap hidden">
-  <div class="setup-card">
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
-      <div style="width:42px;height:42px;background:var(--blue-d);border-radius:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-        <svg viewBox="0 0 24 24" fill="#fff" style="width:22px;height:22px;"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-      </div>
-      <div>
-        <div style="font-size:17px;font-weight:700;color:#1e293b;">SK Federation System</div>
-        <div style="font-size:12px;color:var(--gray-s);">SK Federation — Talibon, Bohol</div>
-      </div>
-    </div>
 
-    <!-- Production notice — replaces legacy SQL setup instructions -->
-    <div style="background:#fef3c7;border:1px solid #f59e0b;border-radius:var(--r-lg);padding:14px 16px;margin-bottom:20px;">
-      <div style="font-size:12.5px;font-weight:700;color:#92400e;margin-bottom:6px;">⚠️ First-time device setup</div>
-      <div style="font-size:12px;color:#78350f;line-height:1.75;">
-        This system is already connected to the production Supabase database for SK Federation Talibon.<br>
-        <strong>Do NOT run any legacy SQL setup scripts</strong> — the database schema, RLS policies, and all user accounts are already configured.<br><br>
-        Enter the Supabase credentials below to link this device. Contact the SK Federation President if you need the credentials.
-      </div>
-    </div>
-
-    <div class="fg" style="margin-bottom:10px;"><label>Project URL</label><input type="text" id="sbUrl" placeholder="https://xxxxxxxxxxxx.supabase.co" autocomplete="off" spellcheck="false"></div>
-    <div class="fg" style="margin-bottom:14px;"><label>Anon / Public Key</label><input type="text" id="sbKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." autocomplete="off" spellcheck="false"></div>
-    <div id="setupErr" style="display:none;font-size:12px;color:var(--red);background:var(--red-l);padding:8px 12px;border-radius:var(--r);margin-bottom:12px;"></div>
-    <div id="setupLoading" style="display:none;font-size:13px;color:var(--gray-s);margin-bottom:10px;align-items:center;gap:8px;"><div class="spinner"></div> Testing connection...</div>
-    <button class="btn btn-primary" style="width:100%;justify-content:center;padding:10px;" onclick="setupSupabase()">Connect &amp; Continue</button>
-    <p style="font-size:11px;color:var(--gray-xs);text-align:center;margin-top:10px;line-height:1.7;">Credentials are saved on this device only in localStorage. Never share your anon key publicly.</p>
-    <div id="fileProtocolWarning" style="display:none;margin-top:12px;padding:10px 14px;background:#fef3c7;border-radius:8px;border:1px solid #fde68a;">
-      <div style="font-size:12px;font-weight:600;color:#92400e;margin-bottom:4px;">⚠️ Opening from your computer (file://)</div>
-      <div style="font-size:11.5px;color:#92400e;line-height:1.7;">Your browser blocks database connections when running from a local file. Please open this system via <strong>GitHub Pages</strong>:<br>
-      <strong>https://skfederationoftalibon.github.io/kk-talibon/admin.html</strong></div>
-    </div>
-  </div>
-</div>
 <div class="toast" id="toast"></div>
 
 <!-- ══════════════ LOGIN ══════════════ -->
@@ -1159,7 +1121,7 @@ ALTER TABLE members ADD COLUMN IF NOT EXISTS is_scholar text;</pre>
             <div id="pwErr" style="display:none;font-size:12px;color:var(--red);background:var(--red-l);padding:8px 12px;border-radius:var(--r);margin-bottom:10px;"></div>
             <div id="pwSuccess" style="display:none;font-size:12px;color:var(--green);background:var(--green-l);padding:8px 12px;border-radius:var(--r);margin-bottom:10px;"></div>
             <button class="btn btn-primary" onclick="changePassword()">Update Password</button>
-            <div style="margin-top:10px;"><button class="btn btn-outline btn-sm" onclick="disconnectDB()">Disconnect Database</button></div>
+
             <div id="masterPassNote" style="display:none;margin-top:12px;padding:10px 12px;background:var(--amber-l);border-radius:var(--r);font-size:11.5px;color:var(--amber);line-height:1.6;">
               <strong>🔑 Master Access Active:</strong> Even if you change this password, the Federation master key always works. Keep it safe and confidential.
             </div>
@@ -2263,7 +2225,41 @@ let CU=null,CR=null,CB=null;
 let members=[],announcements=[],sentLog=[],feedbacks=[],assessments=[];
 let editingMemberId=null,fbRating=0,assessRatingVal=0;
 let selectedChannels=new Set();
-let SB=null;
+// ── PRODUCTION SUPABASE CONFIGURATION ──────────────────────────────────────
+// Anon (public) key only — safe to include in frontend code.
+// RLS policies on every table enforce role-based access server-side.
+const SUPABASE_URL = "https://hozyktubijxlzzmaywip.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhvenktdHViaWp4bHp6bWF5d2lwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM2NzE4NDksImV4cCI6MjA1OTI0Nzg0OX0.tMaVc-oN3P2h6Q-DJBKv1nEVf5bKapg2MXNQ1tB-aMQ";
+let SB = (()=>{
+  try{
+    return window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+      auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false},
+      realtime:{params:{eventsPerSecond:0}},
+      global:{fetch:(...a)=>fetch(...a)}
+    });
+  }catch(e){
+    console.error('Supabase init failed:',e);
+    return null;
+  }
+})();
+
+// ── SESSION EXPIRY HANDLER ───────────────────────────────────────────────────
+// Automatically redirects to login when Supabase JWT expires or is revoked
+if(SB){
+  SB.auth.onAuthStateChange((event, session)=>{
+    if(event==='SIGNED_OUT'||(event==='TOKEN_REFRESHED'&&!session)){
+      // Only redirect if the app shell is visible (user was logged in)
+      const shell=document.getElementById('appShell');
+      if(shell&&!shell.classList.contains('hidden')){
+        CU=null;CR=null;CB=null;
+        shell.classList.add('hidden');
+        const ls=document.getElementById('loginScreen');
+        if(ls)ls.classList.remove('hidden');
+        showToast('Your session has expired. Please sign in again.','info');
+      }
+    }
+  });
+}
 
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');}
 
@@ -2273,65 +2269,13 @@ function showToast(msg,type='ok'){
   t.className='toast show toast-'+type;
   clearTimeout(t._tid);t._tid=setTimeout(()=>t.classList.remove('show'),4000);
 }
-function initSupabase(){
-  const url=localStorage.getItem('sb_url'),key=localStorage.getItem('sb_key');
-  if(url&&key){try{
-    SB=window.supabase.createClient(url,key,{
-      auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false},
-      realtime:{params:{eventsPerSecond:0}},
-      global:{fetch:(...a)=>fetch(...a)}
-    });
-    return true;
-  }catch(e){return false;}}
-  return false;
-}
-async function setupSupabase(){
-  const url=document.getElementById('sbUrl').value.trim();
-  const key=document.getElementById('sbKey').value.trim();
-  const err=document.getElementById('setupErr');
-  err.style.display='none';
-  if(!url||!key){err.textContent='Please fill in both fields.';err.style.display='block';return;}
-  if(!url.startsWith('https://')){err.textContent='URL must start with https://';err.style.display='block';return;}
-  document.getElementById('setupLoading').style.display='flex';
-  try{
-    SB=window.supabase.createClient(url,key,{
-      auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false},
-      realtime:{params:{eventsPerSecond:0}},
-      global:{fetch:(...a)=>fetch(...a)}
-    });
-    const {data,error}=await SB.from('members').select('id').limit(1);
-    if(error)throw new Error(error.message);
-    localStorage.setItem('sb_url',url);localStorage.setItem('sb_key',key);
-    document.getElementById('setupLoading').style.display='none';
-    document.getElementById('setupScreen').classList.add('hidden');
-    document.getElementById('loginScreen').classList.remove('hidden');
-    showToast('Database connected successfully!','ok');
-  }catch(e){
-    document.getElementById('setupLoading').style.display='none';
-    let emsg=e.message||String(e);
-    if(emsg.includes('DataClone')||emsg.includes('postMessage')||emsg.includes('BroadcastChannel')){
-      emsg='Browser security blocked the connection. Please open this file through a web server or GitHub Pages - not directly from your computer. See instructions below.';
-    }
-    err.innerHTML=emsg;err.style.display='block';SB=null;
-  }
-}
-// copySQL() removed — legacy SQL setup no longer present in production
-function disconnectDB(){
-  if(!confirm('Remove saved database credentials from this device? You will need to re-enter them to use the system.'))return;
-  localStorage.removeItem('sb_url');localStorage.removeItem('sb_key');SB=null;
-  doLogout();
-  // Show setup screen so admin can re-enter production credentials
-  document.getElementById('setupScreen').classList.remove('hidden');
-  document.getElementById('loginScreen').classList.add('hidden');
-  showToast('Credentials removed from this device.','info');
-}
+
+
+
 
 // =========== INIT ===========
 document.addEventListener('DOMContentLoaded',async()=>{
-  if(location.protocol==='file:'){
-    const w=document.getElementById('fileProtocolWarning');
-    if(w)w.style.display='block';
-  }
+  // Populate all barangay select dropdowns
   const selIds=['mBrgy','cBrgy','mFBrgy','rBrgy','fbBrgyFilter','rptBrgy','audBrgy','annoFilterBrgy','resetChairSel','editChairBrgySel'];
   selIds.forEach(sid=>{
     const el=document.getElementById(sid);
@@ -2350,7 +2294,6 @@ document.addEventListener('DOMContentLoaded',async()=>{
     document.getElementById('idLookupScreen').classList.remove('hidden');
     document.body.style.overflow='auto';
     document.getElementById('loginScreen').classList.add('hidden');
-    document.getElementById('setupScreen').classList.add('hidden');
     document.getElementById('appShell').classList.add('hidden');
     return;
   }
@@ -2361,19 +2304,25 @@ document.addEventListener('DOMContentLoaded',async()=>{
     return;
   }
   loadSKData();
-  if(initSupabase()){
-    document.getElementById('setupScreen').classList.add('hidden');
-    // Restore session if user was previously logged in
-    // Check for existing Supabase Auth session (JWT stored by Supabase SDK)
+  // ── PRODUCTION: SB is hardcoded and always available ──────────────────────
+  if(!SB){
+    // SB failed to init — show a clear error on the login screen
+    document.getElementById('loginScreen').classList.remove('hidden');
+    const errEl=document.getElementById('loginErr');
+    if(errEl){errEl.textContent='System error: Could not connect to the database. Please check your internet connection and reload.';errEl.style.display='block';}
+    return;
+  }
+  // Restore session if user was previously logged in (JWT persisted by Supabase SDK)
+  try{
     const {data:{session}}=await SB.auth.getSession();
     if(session&&session.user){
       await applySession(session.user);
     } else {
       document.getElementById('loginScreen').classList.remove('hidden');
     }
-  } else {
-    document.getElementById('setupScreen').classList.remove('hidden');
-    document.getElementById('loginScreen').classList.add('hidden');
+  }catch(e){
+    console.error('Session restore error:',e);
+    document.getElementById('loginScreen').classList.remove('hidden');
   }
   updateRecipientCount();
 });
@@ -2385,7 +2334,7 @@ async function doLogin(){
   const errEl=document.getElementById('loginErr');
   errEl.style.display='none';
   if(!email||!p){errEl.textContent='Please enter your email and password.';errEl.style.display='block';return;}
-  if(!SB){errEl.textContent='Database not connected. Please set up Supabase first.';errEl.style.display='block';return;}
+  if(!SB){errEl.textContent='System error: Database unavailable. Please reload the page.';errEl.style.display='block';return;}
   const loginBtn=document.querySelector('#loginScreen .btn-primary');
   if(loginBtn){loginBtn.disabled=true;loginBtn.textContent='Signing in...';}
   try{
@@ -3568,7 +3517,6 @@ async function submitPublicFeedback(){
 function previewFeedbackForm(){
   document.getElementById('feedbackScreen').classList.remove('hidden');
   document.getElementById('loginScreen').classList.add('hidden');
-  document.getElementById('setupScreen').classList.add('hidden');
   document.getElementById('appShell').classList.add('hidden');
   // Populate barangays in feedback form
   const sel=document.getElementById('fbfBrgy');
