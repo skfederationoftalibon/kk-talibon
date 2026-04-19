@@ -30,7 +30,7 @@ body{min-height:100vh;}
 .pill-blue{background:var(--blue-l);color:var(--blue-d);}
 .pill-green{background:var(--green-l);color:var(--green);}
 .pill-amber{background:var(--amber-l);color:var(--amber);}
-.pill-red{background:var(--red-l);color:var(--red);}.pill-teal{background:#ccfbf1;color:#0f766e;}.pill-amber{background:#fef3c7;color:#92400e;}.pill-blue{background:#dbeafe;color:#1e40af;}.pill-orange{background:#ffedd5;color:#9a3412;}
+.pill-red{background:var(--red-l);color:var(--red);}.pill-teal{background:#ccfbf1;color:#0f766e;}.pill-amber{background:#fef3c7;color:#92400e;}.pill-blue{background:#dbeafe;color:#1e40af;}.pill-orange{background:#fef3c7;color:#92400e;}
 .pill-purple{background:var(--purple-l);color:var(--purple);}
 .pill-teal{background:var(--teal-l);color:var(--teal);}
 .pill-orange{background:var(--orange-l);color:var(--orange);}
@@ -5159,7 +5159,7 @@ const DOC_CATEGORY_COLORS = {
 };
 const DOC_STATUS_COLORS = {
   draft:'pill-gray', submitted:'pill-amber', approved:'pill-blue',
-  published:'pill-green', archived:'pill-gray'
+  published:'pill-green', archived:'pill-orange'
 };
 const DOC_STATUS_EMOJI = {
   draft:'📝', submitted:'📤', approved:'✅', published:'🌐', archived:'📦'
@@ -5305,7 +5305,8 @@ function renderSKDocuments() {
         ${d.file_url ? `<a href="${esc(d.file_url)}" target="_blank" class="btn btn-outline btn-xs" style="margin-right:3px;color:var(--green);">📎 File</a>` : ''}
         ${CR==='federation'&&d.status==='submitted'?`<button class="btn btn-green btn-xs" onclick="approveDocument('${d.id}')" style="margin-right:3px;">Approve</button>`:''}
         ${CR==='federation'&&d.status==='approved'?`<button class="btn btn-primary btn-xs" onclick="publishDocument('${d.id}')" style="margin-right:3px;">Publish</button>`:''}
-        ${CR==='federation'?`<button class="btn btn-danger btn-xs" onclick="archiveDocument('${d.id}')">Archive</button>`:''}
+        ${d.status!=='archived'?((CR==='federation'||(CR==='chairman'&&d.brgy===CB&&!['approved','published'].includes(d.status)))?`<button class="btn btn-outline btn-xs" onclick="archiveDocument('${d.id}')" style="margin-right:3px;color:#92400e;border-color:#f59e0b;" title="Move to archive">📦 Archive</button>`:''): (CR==='federation'?`<button class="btn btn-outline btn-xs" onclick="restoreDocument('${d.id}')" style="margin-right:3px;color:var(--green);border-color:var(--green);" title="Restore from archive">♻️ Restore</button>`:'')}
+        ${CR==='federation'&&d.status==='archived'?`<button class="btn btn-danger btn-xs" onclick="permanentDeleteDocument('${d.id}')" title="Permanently delete (cannot undo)">🗑 Delete</button>`:''}
       </td>
     </tr>`;
   }).join('');
@@ -5644,9 +5645,47 @@ async function publishDocument(id) {
   if (!confirm('Publish this document? It will appear on the public website.')) return;
   await _updateDocStatus(id, 'published', {visibility:'public', published_at: new Date().toISOString()});
 }
+// ── ARCHIVE: chairman = own non-approved docs; federation = any doc ──────────
 async function archiveDocument(id) {
-  if (!confirm('Archive this document? It will no longer show in active lists.')) return;
+  const d = skDocuments.find(x => x.id === id);
+  if (!d) return;
+  if (CR === 'chairman') {
+    if (d.brgy !== CB) { showToast('You can only archive your own barangay documents.','err'); return; }
+    if (['approved','published'].includes(d.status)) { showToast('Only the Federation can archive approved or published documents.','err'); return; }
+  }
+  if (!confirm('Archive this document?\n\nIt will be hidden from active lists. The Federation can restore it later.')) return;
   await _updateDocStatus(id, 'archived');
+}
+
+// ── RESTORE: federation only — moves archived doc back to draft ───────────────
+async function restoreDocument(id) {
+  if (CR !== 'federation') { showToast('Only the Federation can restore archived documents.','err'); return; }
+  const d = skDocuments.find(x => x.id === id);
+  if (!d || d.status !== 'archived') { showToast('Only archived documents can be restored.','err'); return; }
+  if (!confirm('Restore this document from archive?\n\nIt will return to Draft status for editing.')) return;
+  await _updateDocStatus(id, 'draft');
+}
+
+// ── PERMANENT DELETE: federation only, archived docs only ─────────────────────
+async function permanentDeleteDocument(id) {
+  if (CR !== 'federation') { showToast('Only the Federation can permanently delete documents.','err'); return; }
+  const d = skDocuments.find(x => x.id === id);
+  if (!d) return;
+  if (d.status !== 'archived') { showToast('Only archived documents can be permanently deleted. Archive it first.','err'); return; }
+  if (!confirm(
+    '⚠️  PERMANENT DELETE\n\n"' + (d.title||'') + '"\n\n' +
+    'This will erase the document, all version history, and all comments.\n' +
+    'This action CANNOT be undone. Are you sure?'
+  )) return;
+  if (!SB) { showToast('Not connected.','err'); return; }
+  try {
+    const {error} = await SB.from('sk_documents').delete().eq('id', id).eq('status','archived');
+    if (error) throw error;
+    skDocuments = skDocuments.filter(x => x.id !== id);
+    renderSKDocuments();
+    updateDocsDueBadge();
+    showToast('Document permanently deleted.','ok');
+  } catch(e) { showToast('Delete failed: ' + e.message,'err'); }
 }
 async function toggleDocPublish() {
   const id = document.getElementById('docPublishToggleBtn')?.dataset?.docid;
@@ -8919,6 +8958,8 @@ window.saveDocument = saveDocument;
 window.approveDocument = approveDocument;
 window.publishDocument = publishDocument;
 window.archiveDocument = archiveDocument;
+window.restoreDocument = restoreDocument;
+window.permanentDeleteDocument = permanentDeleteDocument;
 window.toggleDocPublish = toggleDocPublish;
 window.exportDocsCSV = exportDocsCSV;
 window.printDocumentTemplate = printDocumentTemplate;
