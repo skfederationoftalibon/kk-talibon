@@ -16,7 +16,7 @@
 <meta property="og:title" content="SK Federation Talibon — Talibon, Bohol">
 <meta property="og:description" content="Official SK Federation portal. News, events, KK registration, and digital ID.">
 <meta property="og:image" content="icon-512.png">
-<script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 :root{
@@ -521,16 +521,16 @@ async function init(){
     bar.appendChild(chip);
     const opt=document.createElement('option');opt.value=b;opt.textContent=b;fbSel.appendChild(opt);
   });
-  // Connect Supabase
-  const url=localStorage.getItem('sb_url'),key=localStorage.getItem('sb_key');
-  if(!url||!key){showSetupBanner();renderOffline();return;}
+  // Connect Supabase — production hardcoded config
+  const url="https://hozyktubijxlzzmaywip.supabase.co";
+  const key="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhvenlrdHViaWp4bHp6bWF5d2lwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMDA3NzgsImV4cCI6MjA4OTU3Njc3OH0.ySZlJrh6VOXzgOHBaFQW4_IpZyyVaz0cxNbl0BX2hkU";
   try{
     SB=window.supabase.createClient(url,key,{
       auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false},
       realtime:{params:{eventsPerSecond:0}}
     });
     await Promise.all([loadPosts(),loadStats(),loadTransparencyDocs()]);
-  }catch(e){showSetupBanner();renderOffline();}
+  }catch(e){renderOffline();}
 }
 
 async function loadStats(){
