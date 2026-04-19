@@ -30,7 +30,7 @@ body{min-height:100vh;}
 .pill-blue{background:var(--blue-l);color:var(--blue-d);}
 .pill-green{background:var(--green-l);color:var(--green);}
 .pill-amber{background:var(--amber-l);color:var(--amber);}
-.pill-red{background:var(--red-l);color:var(--red);}.pill-teal{background:#ccfbf1;color:#0f766e;}.pill-amber{background:#fef3c7;color:#92400e;}.pill-blue{background:#dbeafe;color:#1e40af;}.pill-orange{background:#fef3c7;color:#92400e;}
+.pill-red{background:var(--red-l);color:var(--red);}.pill-teal{background:#ccfbf1;color:#0f766e;}.pill-amber{background:#fef3c7;color:#92400e;}.pill-blue{background:#dbeafe;color:#1e40af;}.pill-orange{background:#ffedd5;color:#9a3412;}
 .pill-purple{background:var(--purple-l);color:var(--purple);}
 .pill-teal{background:var(--teal-l);color:var(--teal);}
 .pill-orange{background:var(--orange-l);color:var(--orange);}
@@ -2473,7 +2473,7 @@ function renderDashboard(){
     <div class="stat-card"><div class="stat-icon" style="background:#eff4ff;"><svg viewBox="0 0 24 24" fill="none" stroke="#1a56db" stroke-width="2" style="width:18px;height:18px;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div><div class="stat-label">Total Members</div><div class="stat-value">${data.length}</div><div class="stat-sub">${CR==='federation'?'All 25 barangays':CB}</div></div>
     <div class="stat-card"><div class="stat-icon" style="background:var(--green-l);"><svg viewBox="0 0 24 24" fill="none" stroke="#057a55" stroke-width="2" style="width:18px;height:18px;"><polyline points="20 6 9 17 4 12"/></svg></div><div class="stat-label">Active</div><div class="stat-value">${data.filter(m=>m.status==='Active').length}</div><div class="stat-sub">${data.length?Math.round(data.filter(m=>m.status==='Active').length/data.length*100):0}% of total</div></div>
     <div class="stat-card"><div class="stat-icon" style="background:var(--amber-l);"><svg viewBox="0 0 24 24" fill="none" stroke="#92400e" stroke-width="2" style="width:18px;height:18px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div><div class="stat-label">Out of School Youth</div><div class="stat-value">${osy}</div><div class="stat-sub">Needs intervention</div></div>
-    <div class="stat-card"><div class="stat-icon" style="background:var(--amber-l);"><svg viewBox="0 0 24 24" fill="none" stroke="#92400e" stroke-width="2" style="width:18px;height:18px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><div class="stat-label">Pending Approval</div><div class="stat-value">${data.filter(m=>m.status==='Pending').length}</div><div class="stat-sub" style="color:var(--amber);">Needs review</div></div>
+    <div class="stat-card"><div class="stat-icon" style="background:var(--amber-l);"><svg viewBox="0 0 24 24" fill="none" stroke="#92400e" stroke-width="2" style="width:18px;height:18px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><div class="stat-label">Pending Approval</div><div class="stat-value">${data.filter(m=>m.status==='Pending').length+(CR==='federation'?(skDocuments||[]).filter(d=>d.status==='submitted').length:0)}</div><div class="stat-sub" style="color:var(--amber);">Needs review</div></div>
     <div class="stat-card"><div class="stat-icon" style="background:var(--teal-l);"><svg viewBox="0 0 24 24" fill="none" stroke="#005661" stroke-width="2" style="width:18px;height:18px;"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></div><div class="stat-label">Working / Employed</div><div class="stat-value">${working}</div><div class="stat-sub">Including working students</div></div>
     <div class="stat-card"><div class="stat-icon" style="background:var(--blue-l);"><svg viewBox="0 0 24 24" fill="none" stroke="#1a56db" stroke-width="2" style="width:18px;height:18px;"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div><div class="stat-label">Registered SK Voters</div><div class="stat-value">${data.filter(m=>m.isSKVoter==='Registered SK Voter').length}</div><div class="stat-sub">Ages 15-17 SK only</div></div>
     <div class="stat-card"><div class="stat-icon" style="background:var(--green-l);"><svg viewBox="0 0 24 24" fill="none" stroke="#057a55" stroke-width="2" style="width:18px;height:18px;"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div><div class="stat-label">Registered Regular Voters</div><div class="stat-value">${data.filter(m=>m.isVoter==='Registered Regular Voter').length}</div><div class="stat-sub">Ages 18+ all elections</div></div>
@@ -3803,10 +3803,13 @@ function downloadLookupID(){
 }
 
 function updatePendingBadge(){
-  const pending=members.filter(m=>m.status==='Pending').length;
+  const pendingMembers=members.filter(m=>m.status==='Pending').length;
+  // GAP 4+5: federation sees submitted docs count in the badge too
+  const pendingDocs=CR==='federation'?(skDocuments||[]).filter(d=>d.status==='submitted').length:0;
+  const total=pendingMembers+pendingDocs;
   const badge=document.getElementById('navPendingBadge');
   if(!badge)return;
-  if(pending>0){badge.style.display='flex';badge.textContent=pending;}
+  if(total>0){badge.style.display='flex';badge.textContent=total;}
   else{badge.style.display='none';}
 }
 
@@ -5303,10 +5306,7 @@ function renderSKDocuments() {
         <button class="btn btn-outline btn-xs" onclick="editDocument('${d.id}')" style="margin-right:3px;">Edit</button>
         ${d.template_id ? `<button class="btn btn-outline btn-xs" onclick="printDocumentTemplate('${d.id}')" style="margin-right:3px;color:var(--blue-d);">🖨</button>` : ''}
         ${d.file_url ? `<a href="${esc(d.file_url)}" target="_blank" class="btn btn-outline btn-xs" style="margin-right:3px;color:var(--green);">📎 File</a>` : ''}
-        ${CR==='federation'&&d.status==='submitted'?`<button class="btn btn-green btn-xs" onclick="approveDocument('${d.id}')" style="margin-right:3px;">Approve</button>`:''}
-        ${CR==='federation'&&d.status==='approved'?`<button class="btn btn-primary btn-xs" onclick="publishDocument('${d.id}')" style="margin-right:3px;">Publish</button>`:''}
-        ${d.status!=='archived'?((CR==='federation'||(CR==='chairman'&&d.brgy===CB&&!['approved','published'].includes(d.status)))?`<button class="btn btn-outline btn-xs" onclick="archiveDocument('${d.id}')" style="margin-right:3px;color:#92400e;border-color:#f59e0b;" title="Move to archive">📦 Archive</button>`:''): (CR==='federation'?`<button class="btn btn-outline btn-xs" onclick="restoreDocument('${d.id}')" style="margin-right:3px;color:var(--green);border-color:var(--green);" title="Restore from archive">♻️ Restore</button>`:'')}
-        ${CR==='federation'&&d.status==='archived'?`<button class="btn btn-danger btn-xs" onclick="permanentDeleteDocument('${d.id}')" title="Permanently delete (cannot undo)">🗑 Delete</button>`:''}
+        ${CR==='chairman'&&d.brgy===CB&&d.status==='draft'?`<button class="btn btn-outline btn-xs" onclick="submitDocumentForReview('${d.id}')" style="margin-right:3px;color:var(--blue-d);border-color:var(--blue-m);" title="Submit to Federation for approval">📤 Submit</button>`:''}        ${CR==='federation'&&d.status==='submitted'?`<button class="btn btn-green btn-xs" onclick="approveDocument('${d.id}')" style="margin-right:3px;">Approve</button>`:''}        ${CR==='federation'&&d.status==='approved'?`<button class="btn btn-primary btn-xs" onclick="publishDocument('${d.id}')" style="margin-right:3px;">Publish</button>`:''}        ${d.status!=='archived'?((CR==='federation'||(CR==='chairman'&&d.brgy===CB&&!['approved','published'].includes(d.status)))?`<button class="btn btn-outline btn-xs" onclick="archiveDocument('${d.id}')" style="margin-right:3px;color:#92400e;border-color:#f59e0b;" title="Move to archive">📦 Archive</button>`:''): (CR==='federation'?`<button class="btn btn-outline btn-xs" onclick="restoreDocument('${d.id}')" style="margin-right:3px;color:var(--green);border-color:var(--green);" title="Restore from archive">♻️ Restore</button>`:'')}        ${CR==='federation'&&d.status==='archived'?`<button class="btn btn-danger btn-xs" onclick="permanentDeleteDocument('${d.id}')" title="Permanently delete — cannot undo">🗑 Delete</button>`:''}
       </td>
     </tr>`;
   }).join('');
@@ -5451,6 +5451,8 @@ function openAddDocument() {
   ['docCategory','docType','docStatus','docVisibility','docTemplate'].forEach(id => {
     const e = document.getElementById(id); if(e) e.value = id==='docStatus'?'draft':id==='docVisibility'?'internal':'';
   });
+  // Restrict status/visibility options based on role (GAP 1, GAP 9)
+  _applyDocModalRoleRestrictions();
   ['docDate','docDueDate','docPeriodStart','docPeriodEnd','docExpiryDate'].forEach(id => {
     const e = document.getElementById(id); if(e) e.value = '';
   });
@@ -5506,6 +5508,8 @@ async function editDocument(id) {
   await loadDocVersionHistory(id);
   // Load comments
   await loadDocComments(id);
+  // Restrict status/visibility options based on role (GAP 1, GAP 9)
+  _applyDocModalRoleRestrictions();
   openModal('modalDocument');
 }
 
@@ -5590,10 +5594,19 @@ async function saveDocument() {
   let refNum = document.getElementById('docRefNumber').value.trim();
   if (!refNum) refNum = generateDocRefNumber(category, docType, brgyRaw, year);
 
+  // GAP 6: capture owner_id for audit trail
+  let _ownerId = null;
+  if(SB){try{const {data:ud}=await SB.auth.getUser();_ownerId=ud?.user?.id||null;}catch(e){}}
   const row = {
     ref_number: refNum, title, category, doc_type: docType,
     brgy, fiscal_year: year,
-    status: document.getElementById('docStatus').value || 'draft',
+    owner_id: _ownerId,
+    status: (()=>{
+      const sel=document.getElementById('docStatus').value||'draft';
+      // GAP 1: chairman cannot save as approved or published
+      if(CR==='chairman'&&['approved','published'].includes(sel)){return 'submitted';}
+      return sel;
+    })(),
     visibility: document.getElementById('docVisibility').value || 'internal',
     doc_date: document.getElementById('docDate').value || null,
     due_date: document.getElementById('docDueDate').value || null,
@@ -5645,7 +5658,7 @@ async function publishDocument(id) {
   if (!confirm('Publish this document? It will appear on the public website.')) return;
   await _updateDocStatus(id, 'published', {visibility:'public', published_at: new Date().toISOString()});
 }
-// ── ARCHIVE: chairman = own non-approved docs; federation = any doc ──────────
+// ── ARCHIVE / RESTORE / PERMANENT DELETE ─────────────────────────────────────
 async function archiveDocument(id) {
   const d = skDocuments.find(x => x.id === id);
   if (!d) return;
@@ -5657,26 +5670,20 @@ async function archiveDocument(id) {
   await _updateDocStatus(id, 'archived');
 }
 
-// ── RESTORE: federation only — moves archived doc back to draft ───────────────
 async function restoreDocument(id) {
   if (CR !== 'federation') { showToast('Only the Federation can restore archived documents.','err'); return; }
   const d = skDocuments.find(x => x.id === id);
   if (!d || d.status !== 'archived') { showToast('Only archived documents can be restored.','err'); return; }
-  if (!confirm('Restore this document from archive?\n\nIt will return to Draft status for editing.')) return;
+  if (!confirm('Restore this document from archive?\n\nIt will return to Draft status.')) return;
   await _updateDocStatus(id, 'draft');
 }
 
-// ── PERMANENT DELETE: federation only, archived docs only ─────────────────────
 async function permanentDeleteDocument(id) {
   if (CR !== 'federation') { showToast('Only the Federation can permanently delete documents.','err'); return; }
   const d = skDocuments.find(x => x.id === id);
   if (!d) return;
   if (d.status !== 'archived') { showToast('Only archived documents can be permanently deleted. Archive it first.','err'); return; }
-  if (!confirm(
-    '⚠️  PERMANENT DELETE\n\n"' + (d.title||'') + '"\n\n' +
-    'This will erase the document, all version history, and all comments.\n' +
-    'This action CANNOT be undone. Are you sure?'
-  )) return;
+  if (!confirm('⚠️ PERMANENT DELETE\n\n"' + (d.title||'') + '"\n\nThis will erase the document and all its history.\nThis CANNOT be undone. Continue?')) return;
   if (!SB) { showToast('Not connected.','err'); return; }
   try {
     const {error} = await SB.from('sk_documents').delete().eq('id', id).eq('status','archived');
@@ -5685,7 +5692,7 @@ async function permanentDeleteDocument(id) {
     renderSKDocuments();
     updateDocsDueBadge();
     showToast('Document permanently deleted.','ok');
-  } catch(e) { showToast('Delete failed: ' + e.message,'err'); }
+  } catch(e) { showToast('Delete failed: '+e.message,'err'); }
 }
 async function toggleDocPublish() {
   const id = document.getElementById('docPublishToggleBtn')?.dataset?.docid;
@@ -8341,6 +8348,8 @@ function openFormTemplate(tplId, brgy) {
   _feCurrentDocId = null;
   const targetBrgy = CR==='chairman' ? CB : (brgy||CB||'');
   _openFormEditor(tpl, {}, targetBrgy);
+  // GAP 2: restrict feStatusSel for chairman
+  setTimeout(_applyFormEditorRoleRestrictions, 50);
 }
 
 // Open an existing saved document for editing
@@ -8352,6 +8361,8 @@ async function openFormDocument(docId) {
   _feCurrentTplId = doc.template_id;
   _feCurrentDocId = docId;
   _openFormEditor(tpl, doc.form_data || {}, doc.brgy||'');
+  // GAP 2: restrict feStatusSel for chairman
+  setTimeout(_applyFormEditorRoleRestrictions, 50);
   // Set status and visibility from saved doc
   const stSel = document.getElementById('feStatusSel');
   const visSel = document.getElementById('feVisibilitySel');
@@ -8914,6 +8925,123 @@ function addOrdSection() {
   wrap.appendChild(div);
 }
 
+// ── ROLE-BASED MODAL RESTRICTION HELPERS ────────────────────────────────────
+
+// GAP 1+9: Restrict docStatus and docVisibility options for chairman
+function _applyDocModalRoleRestrictions() {
+  const statusSel = document.getElementById('docStatus');
+  const visSel = document.getElementById('docVisibility');
+  if (!statusSel || !visSel) return;
+  if (CR === 'chairman') {
+    // Remove approved, published options from status
+    ['approved','published'].forEach(val => {
+      const opt = statusSel.querySelector(`option[value="${val}"]`);
+      if (opt) opt.remove();
+    });
+    // If current value is restricted, reset to 'submitted'
+    if (['approved','published'].includes(statusSel.value)) statusSel.value = 'submitted';
+    // Lock visibility to internal
+    if (visSel) {
+      const pubOpt = visSel.querySelector('option[value="public"]');
+      if (pubOpt) pubOpt.remove();
+      visSel.value = 'internal';
+      visSel.disabled = true;
+      visSel.title = 'Only the Federation can publish documents publicly.';
+    }
+  } else {
+    // Federation: ensure all options present (modal may have been used as chairman before)
+    if (!statusSel.querySelector('option[value="approved"]')) {
+      const opt = document.createElement('option');
+      opt.value = 'approved'; opt.textContent = 'Approved';
+      statusSel.appendChild(opt);
+    }
+    if (!statusSel.querySelector('option[value="published"]')) {
+      const opt = document.createElement('option');
+      opt.value = 'published'; opt.textContent = 'Published (visible on website)';
+      statusSel.appendChild(opt);
+    }
+    if (visSel) {
+      visSel.disabled = false;
+      if (!visSel.querySelector('option[value="public"]')) {
+        const opt = document.createElement('option');
+        opt.value = 'public'; opt.textContent = '🌐 Public / Transparency (visible to everyone)';
+        visSel.appendChild(opt);
+      }
+    }
+  }
+}
+
+// GAP 2: Restrict feStatusSel for chairman in the form editor modal
+function _applyFormEditorRoleRestrictions() {
+  const stSel = document.getElementById('feStatusSel');
+  const visSel = document.getElementById('feVisibilitySel');
+  if (!stSel) return;
+  if (CR === 'chairman') {
+    ['approved','published'].forEach(val => {
+      const opt = stSel.querySelector(`option[value="${val}"]`);
+      if (opt) opt.remove();
+    });
+    if (['approved','published'].includes(stSel.value)) stSel.value = 'submitted';
+    if (visSel) {
+      const pubOpt = visSel.querySelector('option[value="public"]');
+      if (pubOpt) pubOpt.remove();
+      visSel.value = 'internal';
+      visSel.disabled = true;
+    }
+  } else {
+    if (!stSel.querySelector('option[value="approved"]')) {
+      const opt = document.createElement('option');
+      opt.value = 'approved'; opt.textContent = 'Approved';
+      stSel.insertBefore(opt, stSel.querySelector('option[value="published"]') || null);
+    }
+    if (!stSel.querySelector('option[value="published"]')) {
+      const opt = document.createElement('option');
+      opt.value = 'published'; opt.textContent = 'Published';
+      stSel.appendChild(opt);
+    }
+    if (visSel) {
+      visSel.disabled = false;
+      if (!visSel.querySelector('option[value="public"]')) {
+        const opt = document.createElement('option');
+        opt.value = 'public'; opt.textContent = '🌐 Public';
+        visSel.appendChild(opt);
+      }
+    }
+  }
+}
+
+// GAP 3: Chairman submits draft document for federation review
+async function submitDocumentForReview(id) {
+  const d = skDocuments.find(x => x.id === id);
+  if (!d) return;
+  if (CR !== 'chairman') { showToast('Only a chairman can use Submit for Review.','err'); return; }
+  if (d.brgy !== CB) { showToast('You can only submit your own barangay documents.','err'); return; }
+  if (d.status !== 'draft') { showToast('Only draft documents can be submitted for review.','err'); return; }
+  if (!confirm(
+    'Submit "' + (d.title||'this document') + '" to the Federation for approval?\n\n' +
+    'The document will be locked from editing until the Federation reviews it.'
+  )) return;
+  if (!SB) { showToast('Not connected.','err'); return; }
+  try {
+    const {data:ud} = await SB.auth.getUser();
+    const extra = {
+      submitted_at: new Date().toISOString(),
+      submitted_by: ud?.user?.id || null
+    };
+    const {error} = await SB.from('sk_documents').update({status:'submitted',...extra}).eq('id',id);
+    if (error) throw error;
+    const idx = skDocuments.findIndex(x => x.id === id);
+    if (idx >= 0) skDocuments[idx] = {...skDocuments[idx], status:'submitted', ...extra};
+    renderSKDocuments();
+    updateDocsDueBadge();
+    updatePendingBadge();
+    showToast('Document submitted for Federation review.','ok');
+  } catch(e) { showToast('Submit failed: '+e.message,'err'); }
+}
+
+// ── ARCHIVE / RESTORE / PERMANENT DELETE ─────────────────────────────────────
+// (These may already exist from a previous session — adding defensively)
+
 // ── Expose critical functions to global scope for inline onclick handlers ──
 window.doLogin = doLogin;
 window.openAddDocument = openAddDocument;
@@ -8960,6 +9088,9 @@ window.publishDocument = publishDocument;
 window.archiveDocument = archiveDocument;
 window.restoreDocument = restoreDocument;
 window.permanentDeleteDocument = permanentDeleteDocument;
+window.submitDocumentForReview = submitDocumentForReview;
+window._applyDocModalRoleRestrictions = _applyDocModalRoleRestrictions;
+window._applyFormEditorRoleRestrictions = _applyFormEditorRoleRestrictions;
 window.toggleDocPublish = toggleDocPublish;
 window.exportDocsCSV = exportDocsCSV;
 window.printDocumentTemplate = printDocumentTemplate;
