@@ -6,6 +6,8 @@
 <!-- SK Federation System — Talibon, Bohol — Production Build -->
 <title>SK Federation System — SK Talibon</title>
 <script src="https://unpkg.com/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -30,7 +32,7 @@ body{min-height:100vh;}
 .pill-blue{background:var(--blue-l);color:var(--blue-d);}
 .pill-green{background:var(--green-l);color:var(--green);}
 .pill-amber{background:var(--amber-l);color:var(--amber);}
-.pill-red{background:var(--red-l);color:var(--red);}.pill-teal{background:#ccfbf1;color:#0f766e;}.pill-amber{background:#fef3c7;color:#92400e;}.pill-blue{background:#dbeafe;color:#1e40af;}.pill-orange{background:#ffedd5;color:#9a3412;}
+.pill-red{background:var(--red-l);color:var(--red);}.pill-teal{background:#ccfbf1;color:#0f766e;}.pill-amber{background:#fef3c7;color:#92400e;}.pill-blue{background:#dbeafe;color:#1e40af;}.pill-orange{background:#fef3c7;color:#92400e;}
 .pill-purple{background:var(--purple-l);color:var(--purple);}
 .pill-teal{background:var(--teal-l);color:var(--teal);}
 .pill-orange{background:var(--orange-l);color:var(--orange);}
@@ -250,6 +252,34 @@ tr:hover td{background:#f8fafc;}
 .toast-ok{border-left:3px solid #10b981;}
 .toast-err{border-left:3px solid #ef4444;}
 .toast-info{border-left:3px solid #3b82f6;}
+
+/* ── MOBILE RESPONSIVE ────────────────────────────────────────────────────── */
+@media(max-width:768px){
+  .main-content{padding:10px 8px;}
+  .topbar{padding:0 8px;flex-wrap:wrap;}
+  .topbar-title{font-size:13px;}
+  .stats-grid{grid-template-columns:1fr 1fr!important;}
+  .stat-card{padding:10px!important;}
+  .form-grid{grid-template-columns:1fr!important;}
+  .fg.full{grid-column:1/-1!important;}
+  .modal{width:98vw!important;max-width:98vw!important;margin:4px!important;}
+  .modal-body{max-height:62vh!important;}
+  .modal-footer{flex-direction:column!important;gap:6px!important;}
+  .modal-footer .btn{width:100%!important;justify-content:center!important;}
+  .card{padding:12px!important;}
+  .btn-xs{padding:3px 6px!important;font-size:11px!important;}
+  .section-header{flex-direction:column;align-items:flex-start!important;gap:8px!important;}
+  .chart-row{flex-direction:column!important;}
+  .chart-box{width:100%!important;}
+  .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  #mainSidebar{width:220px;}
+}
+@media(max-width:480px){
+  .stats-grid{grid-template-columns:1fr!important;}
+  .topbar-actions{display:none;}
+}
+/* table-wrap: ensure all main data tables scroll on mobile */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
 </style>
 </head>
 <body>
@@ -673,6 +703,18 @@ tr:hover td{background:#f8fafc;}
       Reports & Analytics
     </div>
 
+    <div class="nav-item admin-only" id="nav-audit-log" onclick="goPage('audit-log')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      Audit Log
+    </div>
+    <div class="nav-item admin-only" id="nav-backup" onclick="goPage('backup')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.29"/></svg>
+      Backup & Restore
+    </div>
+    <div class="nav-item" id="nav-pending-members" onclick="goPage('pending-members')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><circle cx="12" cy="7" r="4"/><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><polyline points="16 11 18 13 22 9"/></svg>
+      Pending Approvals<span id="pendingMembersBadge" style="display:none;margin-left:auto;min-width:18px;height:18px;background:var(--amber);color:#fff;border-radius:10px;font-size:9px;font-weight:700;text-align:center;line-height:18px;padding:0 4px;">0</span>
+    </div>
     <div class="nav-group-label">Tools</div>
     <div class="nav-item" id="nav-sk-forms" onclick="goPage('sk-forms')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
@@ -708,6 +750,24 @@ tr:hover td{background:#f8fafc;}
         </button>
         <div class="topbar-title" id="topbarTitle">Dashboard</div>
         <div style="font-size:11px;color:var(--gray-xs);" id="topbarDate"></div>
+        <!-- NOTIFICATION BELL -->
+        <div style="position:relative;margin-left:6px;">
+          <button id="notifBell" onclick="toggleNotifPanel()" title="Notifications" style="background:none;border:none;cursor:pointer;padding:5px 7px;border-radius:var(--r);display:flex;align-items:center;position:relative;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.75)" stroke-width="2" style="width:18px;height:18px;"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <span id="notifBadge" style="display:none;position:absolute;top:2px;right:2px;min-width:15px;height:15px;background:#ef4444;color:#fff;border-radius:10px;font-size:9px;font-weight:700;text-align:center;line-height:15px;padding:0 2px;">0</span>
+          </button>
+          <div id="notifPanel" style="display:none;position:fixed;top:50px;right:10px;width:340px;max-width:96vw;background:var(--white);border:1px solid var(--border);border-radius:var(--r-xl);box-shadow:0 8px 32px rgba(0,0,0,.16);z-index:9999;overflow:hidden;">
+            <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+              <div style="font-size:13.5px;font-weight:700;color:#1e293b;">Notifications</div>
+              <button onclick="markAllNotifsRead()" style="font-size:11px;color:var(--blue-d);background:none;border:none;cursor:pointer;padding:2px 6px;border-radius:4px;">Mark all read</button>
+            </div>
+            <div id="notifList" style="max-height:320px;overflow-y:auto;"></div>
+            <div id="notifEmpty" style="display:none;padding:24px;text-align:center;font-size:12.5px;color:var(--gray-s);">No notifications</div>
+            <div style="padding:8px 16px;border-top:1px solid var(--border);text-align:center;">
+              <button onclick="clearAllNotifs()" style="font-size:11px;color:var(--gray-s);background:none;border:none;cursor:pointer;">Clear all</button>
+            </div>
+          </div>
+        </div>
         <!-- YEAR SELECTOR -->
         <div id="yearSelectorWrap" style="display:flex;align-items:center;gap:6px;margin-left:8px;">
           <select id="activeYearSel" onchange="switchYear(this.value)"
@@ -748,6 +808,21 @@ tr:hover td{background:#f8fafc;}
         <div class="two-col">
           <div class="card"><div class="section-title">By Classification</div><div id="classifChart"></div></div>
           <div class="card"><div class="section-title">Members per Barangay (Top 10)</div><div id="brgyChart"></div></div>
+        </div>
+        <!-- ANALYTICS CHARTS ROW -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px;" class="chart-row">
+          <div class="card chart-box" style="padding:14px;">
+            <div style="font-size:12px;font-weight:600;color:#1e293b;margin-bottom:8px;">Classification Breakdown</div>
+            <div style="height:150px;position:relative;"><canvas id="chartClassif"></canvas></div>
+          </div>
+          <div class="card chart-box admin-only" style="padding:14px;">
+            <div style="font-size:12px;font-weight:600;color:#1e293b;margin-bottom:8px;">Members by Barangay (Top 12)</div>
+            <div style="height:150px;position:relative;"><canvas id="chartBrgy"></canvas></div>
+          </div>
+        </div>
+        <div class="card" style="padding:14px;margin-top:14px;">
+          <div style="font-size:12px;font-weight:600;color:#1e293b;margin-bottom:8px;">Document Workflow Status</div>
+          <div style="height:110px;position:relative;"><canvas id="chartDocStatus"></canvas></div>
         </div>
       </div>
 
@@ -1751,6 +1826,105 @@ ALTER TABLE members ADD COLUMN IF NOT EXISTS is_scholar text;</pre>
   </div>
 </div>
 
+<!-- ══════════════ AUDIT LOG PAGE ══════════════ -->
+<div id="page-audit-log" class="hidden admin-only">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
+    <div>
+      <div style="font-size:15px;font-weight:700;color:#1e293b;">📋 Audit Log</div>
+      <div style="font-size:12.5px;color:var(--gray-s);">Complete activity history — who did what, when, and on which record</div>
+    </div>
+    <button class="btn btn-outline btn-sm" onclick="exportAuditCSV()">⬇ Export CSV</button>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center;">
+    <select id="auditFAction" onchange="loadAuditLog()" style="padding:7px 10px;border:1px solid var(--border-m);border-radius:var(--r);font-size:12.5px;font-family:var(--font);">
+      <option value="">All Actions</option>
+      <option value="create">Create</option>
+      <option value="update">Update</option>
+      <option value="submit">Submit for Review</option>
+      <option value="approve">Approve</option>
+      <option value="publish">Publish</option>
+      <option value="archive">Archive</option>
+      <option value="restore">Restore</option>
+      <option value="delete">Delete</option>
+      <option value="approve_member">Approve Member</option>
+      <option value="reject_member">Reject Member</option>
+    </select>
+    <select id="auditFBrgy" onchange="loadAuditLog()" style="padding:7px 10px;border:1px solid var(--border-m);border-radius:var(--r);font-size:12.5px;font-family:var(--font);">
+      <option value="">All Barangays</option>
+    </select>
+    <select id="auditFResource" onchange="loadAuditLog()" style="padding:7px 10px;border:1px solid var(--border-m);border-radius:var(--r);font-size:12.5px;font-family:var(--font);">
+      <option value="">All Resources</option>
+      <option value="document">Document</option>
+      <option value="member">Member</option>
+      <option value="announcement">Announcement</option>
+    </select>
+    <input type="date" id="auditFFrom" onchange="loadAuditLog()" style="padding:7px 10px;border:1px solid var(--border-m);border-radius:var(--r);font-size:12.5px;font-family:var(--font);" title="From date">
+    <input type="date" id="auditFTo"   onchange="loadAuditLog()" style="padding:7px 10px;border:1px solid var(--border-m);border-radius:var(--r);font-size:12.5px;font-family:var(--font);" title="To date">
+    <input type="text" id="auditFSearch" placeholder="Search actor or ref..." oninput="loadAuditLog()" style="flex:1;min-width:150px;padding:7px 10px;border:1px solid var(--border-m);border-radius:var(--r);font-size:12.5px;font-family:var(--font);">
+  </div>
+  <div id="auditTimeline"></div>
+  <div id="auditEmpty" style="display:none;text-align:center;padding:40px;color:var(--gray-s);">No audit records found.</div>
+  <div style="text-align:center;margin-top:14px;">
+    <button id="auditLoadMore" onclick="loadAuditLog(true)" class="btn btn-outline btn-sm" style="display:none;">Load more</button>
+  </div>
+</div>
+
+<!-- ══════════════ BACKUP PAGE ══════════════ -->
+<div id="page-backup" class="hidden admin-only">
+  <div style="margin-bottom:16px;">
+    <div style="font-size:15px;font-weight:700;color:#1e293b;">🗄️ Backup & Restore</div>
+    <div style="font-size:12.5px;color:var(--gray-s);">Export all system data as JSON or restore from a previous backup — Federation admin only</div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;flex-wrap:wrap;">
+    <div class="card">
+      <div style="font-size:14px;font-weight:700;color:#1e293b;margin-bottom:6px;">📤 Export Full Backup</div>
+      <div style="font-size:12.5px;color:var(--gray-s);margin-bottom:14px;line-height:1.7;">Download all data as a single JSON backup file.</div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
+        <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;cursor:pointer;"><input type="checkbox" id="bkMembers" checked> KK Members</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;cursor:pointer;"><input type="checkbox" id="bkDocuments" checked> Documents &amp; Forms</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;cursor:pointer;"><input type="checkbox" id="bkAnnouncements" checked> Announcements</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;cursor:pointer;"><input type="checkbox" id="bkSKData" checked> SK Governance Data (localStorage)</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;cursor:pointer;"><input type="checkbox" id="bkAudit" checked> Audit Log</label>
+      </div>
+      <button class="btn btn-primary" onclick="runFullBackup()">⬇ Download Backup JSON</button>
+    </div>
+    <div class="card">
+      <div style="font-size:14px;font-weight:700;color:#1e293b;margin-bottom:6px;">📥 Restore from Backup</div>
+      <div style="background:var(--amber-l);border:1px solid var(--amber);border-radius:var(--r);padding:10px 12px;margin-bottom:12px;font-size:12px;color:var(--amber);line-height:1.7;">
+        ⚠️ <strong>Warning:</strong> Restoring overwrites current localStorage SK governance data. Supabase data is included for reference only.
+      </div>
+      <input type="file" id="restoreFile" accept=".json" onchange="previewRestoreFile(this)" style="margin-bottom:10px;font-size:12.5px;">
+      <div id="restorePreview" style="display:none;background:var(--gray-l);border-radius:var(--r);padding:10px 12px;font-size:12px;margin-bottom:10px;line-height:1.6;"></div>
+      <button id="restoreBtn" class="btn btn-danger" onclick="runRestore()" disabled>⬆ Restore SK Governance Data</button>
+    </div>
+  </div>
+  <div style="margin-top:20px;" class="card">
+    <div style="font-size:13px;font-weight:700;color:#1e293b;margin-bottom:10px;">📊 Quick Exports</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="btn btn-outline btn-sm" onclick="exportCSV()">⬇ Members CSV</button>
+      <button class="btn btn-outline btn-sm" onclick="exportDocsCSV()">⬇ Documents CSV</button>
+      <button class="btn btn-outline btn-sm" onclick="exportAuditCSV()">⬇ Audit Log CSV</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ PENDING MEMBERS PAGE ══════════════ -->
+<div id="page-pending-members" class="hidden">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
+    <div>
+      <div style="font-size:15px;font-weight:700;color:#1e293b;">⏳ Pending Member Approvals</div>
+      <div style="font-size:12.5px;color:var(--gray-s);">Review new KK registration submissions — approve or reject</div>
+    </div>
+    <div id="pendingCountLabel" style="font-size:13px;color:var(--amber);font-weight:600;"></div>
+  </div>
+  <div id="pendingMembersGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:14px;"></div>
+  <div id="pendingMembersEmpty" style="display:none;text-align:center;padding:48px;color:var(--gray-s);">
+    <div style="font-size:36px;margin-bottom:10px;">✅</div>
+    <div style="font-size:15px;font-weight:600;color:#1e293b;">All registrations reviewed</div>
+    <div style="font-size:13px;margin-top:4px;">No pending KK member approvals.</div>
+  </div>
+</div>
+
 <!-- TEMP PASSWORD MODAL -->
 <div id="tempPassModal" class="modal-bg">
   <div class="modal" style="width:460px;">
@@ -2276,7 +2450,7 @@ function showToast(msg,type='ok'){
 // =========== INIT ===========
 document.addEventListener('DOMContentLoaded',async()=>{
   // Populate all barangay select dropdowns
-  const selIds=['mBrgy','cBrgy','mFBrgy','rBrgy','fbBrgyFilter','rptBrgy','audBrgy','annoFilterBrgy','resetChairSel','editChairBrgySel'];
+  const selIds=['mBrgy','cBrgy','mFBrgy','rBrgy','fbBrgyFilter','rptBrgy','audBrgy','annoFilterBrgy','resetChairSel','editChairBrgySel','auditFBrgy'];
   selIds.forEach(sid=>{
     const el=document.getElementById(sid);
     if(!el)return;
@@ -2365,6 +2539,16 @@ async function applySession(user){
   document.getElementById('sideUserName').textContent=displayName;
   document.getElementById('sideUserRole').textContent=CR==='federation'?'Federation Administrator':'SK Chairman · '+CB;
   document.querySelectorAll('.admin-only').forEach(el=>el.classList.toggle('hidden',CR!=='federation'));
+  // Observer role: show read-only UI, hide all write/action buttons
+  if(CR==='observer'){
+    document.getElementById('sideUserRole').textContent='Observer (Read-Only)';
+    // Hide all write buttons after DOM settles
+    setTimeout(()=>{
+      document.querySelectorAll('.btn-primary,.btn-danger,.btn-green,.btn-orange').forEach(b=>{
+        if(!b.closest('#loginScreen')&&!b.closest('#modalFormEditor'))b.style.display='none';
+      });
+    },300);
+  }
   if(CR==='chairman'&&CB){
     document.getElementById('mBrgy').value=CB;
     document.getElementById('mBrgy').disabled=true;
@@ -2394,7 +2578,7 @@ async function doLogout(){
 }
 
 // =========== NAV ===========
-const PAGE_TITLES={dashboard:'Dashboard','sk-officials':'SK Officials & Officers','sk-programs':'SK Programs & Projects','sk-budget':'SK Budget & Finance','sk-meetings':'SK Meeting Minutes','sk-ordinances':'SK Ordinances & Resolutions','sk-election':'SK Election Records 2025','sk-calendar':'SK Calendar of Activities','sk-compliance':'DILG Compliance Tracker','sk-comms':'Communication Log','sk-inventory':'Inventory & Assets',members:'KK Members','kk-attendance':'KK Attendance Tracker','kk-skills':'KK Skills & Training','kk-awards':'KK Awards & Recognition','kk-benefits':'Youth Benefits Tracker',announce:'Announcements & Notifications',feedback:'Feedback',chairmen:'SK Chairmen',reports:'Reports & Analytics',share:'Share Form Links',digitalid:'Digital ID Cards',settings:'Account Settings','sk-documents':'Documents & Forms','sk-forms':'Forms & Templates'};
+const PAGE_TITLES={dashboard:'Dashboard','sk-officials':'SK Officials & Officers','sk-programs':'SK Programs & Projects','sk-budget':'SK Budget & Finance','sk-meetings':'SK Meeting Minutes','sk-ordinances':'SK Ordinances & Resolutions','sk-election':'SK Election Records 2025','sk-calendar':'SK Calendar of Activities','sk-compliance':'DILG Compliance Tracker','sk-comms':'Communication Log','sk-inventory':'Inventory & Assets',members:'KK Members','kk-attendance':'KK Attendance Tracker','kk-skills':'KK Skills & Training','kk-awards':'KK Awards & Recognition','kk-benefits':'Youth Benefits Tracker',announce:'Announcements & Notifications',feedback:'Feedback',chairmen:'SK Chairmen',reports:'Reports & Analytics',share:'Share Form Links',digitalid:'Digital ID Cards',settings:'Account Settings','sk-documents':'Documents & Forms','sk-forms':'Forms & Templates','audit-log':'Audit Log','backup':'Backup & Restore','pending-members':'Pending Member Approvals'};
 function toggleSidebar(){
   const sb=document.getElementById('mainSidebar');
   const ov=document.getElementById('sidebarOverlay');
@@ -2444,6 +2628,9 @@ function goPage(p){
   if(p==='kk-benefits')renderKKBenefits();
   if(p==='sk-documents')renderSKDocuments();
   if(p==='sk-forms')renderFormsLibrary();
+  if(p==='audit-log'){if(CR!=='observer')loadAuditLog();}
+  if(p==='backup'){if(CR==='federation')renderBackupPage();}
+  if(p==='pending-members')renderPendingMembers();
 }
 
 // =========== SCOPE ===========
@@ -2473,7 +2660,7 @@ function renderDashboard(){
     <div class="stat-card"><div class="stat-icon" style="background:#eff4ff;"><svg viewBox="0 0 24 24" fill="none" stroke="#1a56db" stroke-width="2" style="width:18px;height:18px;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div><div class="stat-label">Total Members</div><div class="stat-value">${data.length}</div><div class="stat-sub">${CR==='federation'?'All 25 barangays':CB}</div></div>
     <div class="stat-card"><div class="stat-icon" style="background:var(--green-l);"><svg viewBox="0 0 24 24" fill="none" stroke="#057a55" stroke-width="2" style="width:18px;height:18px;"><polyline points="20 6 9 17 4 12"/></svg></div><div class="stat-label">Active</div><div class="stat-value">${data.filter(m=>m.status==='Active').length}</div><div class="stat-sub">${data.length?Math.round(data.filter(m=>m.status==='Active').length/data.length*100):0}% of total</div></div>
     <div class="stat-card"><div class="stat-icon" style="background:var(--amber-l);"><svg viewBox="0 0 24 24" fill="none" stroke="#92400e" stroke-width="2" style="width:18px;height:18px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div><div class="stat-label">Out of School Youth</div><div class="stat-value">${osy}</div><div class="stat-sub">Needs intervention</div></div>
-    <div class="stat-card"><div class="stat-icon" style="background:var(--amber-l);"><svg viewBox="0 0 24 24" fill="none" stroke="#92400e" stroke-width="2" style="width:18px;height:18px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><div class="stat-label">Pending Approval</div><div class="stat-value">${data.filter(m=>m.status==='Pending').length+(CR==='federation'?(skDocuments||[]).filter(d=>d.status==='submitted').length:0)}</div><div class="stat-sub" style="color:var(--amber);">Needs review</div></div>
+    <div class="stat-card"><div class="stat-icon" style="background:var(--amber-l);"><svg viewBox="0 0 24 24" fill="none" stroke="#92400e" stroke-width="2" style="width:18px;height:18px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><div class="stat-label">Pending Approval</div><div class="stat-value">${data.filter(m=>m.status==='Pending').length}</div><div class="stat-sub" style="color:var(--amber);">Needs review</div></div>
     <div class="stat-card"><div class="stat-icon" style="background:var(--teal-l);"><svg viewBox="0 0 24 24" fill="none" stroke="#005661" stroke-width="2" style="width:18px;height:18px;"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></div><div class="stat-label">Working / Employed</div><div class="stat-value">${working}</div><div class="stat-sub">Including working students</div></div>
     <div class="stat-card"><div class="stat-icon" style="background:var(--blue-l);"><svg viewBox="0 0 24 24" fill="none" stroke="#1a56db" stroke-width="2" style="width:18px;height:18px;"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div><div class="stat-label">Registered SK Voters</div><div class="stat-value">${data.filter(m=>m.isSKVoter==='Registered SK Voter').length}</div><div class="stat-sub">Ages 15-17 SK only</div></div>
     <div class="stat-card"><div class="stat-icon" style="background:var(--green-l);"><svg viewBox="0 0 24 24" fill="none" stroke="#057a55" stroke-width="2" style="width:18px;height:18px;"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div><div class="stat-label">Registered Regular Voters</div><div class="stat-value">${data.filter(m=>m.isVoter==='Registered Regular Voter').length}</div><div class="stat-sub">Ages 18+ all elections</div></div>
@@ -3448,7 +3635,7 @@ function exportCSV(){
   showToast('Exported '+data.length+' members to CSV!','ok');
 }
 
-async function approveMember(id){
+async async function approveMember(id){
   const m=members.find(x=>String(x.id)===String(id));if(!m)return;
   if(!confirm('Approve '+m.fn+' '+m.ln+' as an active KK member?'))return;
   try{
@@ -3457,9 +3644,10 @@ async function approveMember(id){
       if(error)throw error;
     }
     m.status='Active';
-    filterMembers();renderDashboard();
+    filterMembers();renderDashboard();renderPendingMembers();
     showToast(m.fn+' '+m.ln+' approved as Active member!','ok');
     updatePendingBadge();
+    writeAuditLog('approve_member','member',String(m.id),m.fn+' '+m.ln,m.brgy,{status:'Active'});
   }catch(e){showToast('Approve failed: '+e.message,'err');}
 }
 
@@ -3745,6 +3933,7 @@ function renderIDList(){
   grid.innerHTML=data.map(function(m,i){
     return '<div style="background:#fff;border-radius:var(--r-lg);border:1px solid var(--border);overflow:hidden;">'
       +'<canvas id="idcanvas_'+i+'" style="display:block;width:100%;"></canvas>'
+      +'<div id="qr_'+m.id+'" style="text-align:center;padding:6px 0 2px;background:var(--gray-l);"></div>'
       +'<div style="padding:10px;display:flex;gap:8px;border-top:1px solid var(--border);">'
       +'<button class="btn btn-primary btn-sm" style="flex:1;" onclick="printKKID(\''+m.id+'\')" >View / Print</button>'
       +'<button class="btn btn-outline btn-sm" style="flex:1;" onclick="dlIDCard(\''+m.id+'\',' +i+')" >Download PNG</button>'
@@ -3755,6 +3944,13 @@ function renderIDList(){
     data.forEach(function(m,i){
       const canvas=document.getElementById('idcanvas_'+i);
       if(canvas)drawKKIDOnCanvas(m,canvas);
+      // Render QR code for each ID card (P18)
+      const qrEl=document.getElementById('qr_'+m.id);
+      if(qrEl&&typeof QRCode!=='undefined'){
+        qrEl.innerHTML='';
+        const verifyUrl=window.location.origin+window.location.pathname.replace('admin.html','')+'index.html?verify='+m.id;
+        new QRCode(qrEl,{text:verifyUrl,width:72,height:72,colorDark:'#1e293b',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});
+      }
     });
   },100);
 }
@@ -3803,14 +3999,14 @@ function downloadLookupID(){
 }
 
 function updatePendingBadge(){
-  const pendingMembers=members.filter(m=>m.status==='Pending').length;
-  // GAP 4+5: federation sees submitted docs count in the badge too
-  const pendingDocs=CR==='federation'?(skDocuments||[]).filter(d=>d.status==='submitted').length:0;
-  const total=pendingMembers+pendingDocs;
+  const pendingM=members.filter(m=>m.status==='Pending').length;
+  const pendingD=CR==='federation'?(skDocuments||[]).filter(d=>d.status==='submitted').length:0;
+  const total=pendingM+pendingD;
   const badge=document.getElementById('navPendingBadge');
-  if(!badge)return;
-  if(total>0){badge.style.display='flex';badge.textContent=total;}
-  else{badge.style.display='none';}
+  if(badge){if(total>0){badge.style.display='flex';badge.textContent=total;}else{badge.style.display='none';}}
+  // Also update the pending-members page nav badge
+  const pmb=document.getElementById('pendingMembersBadge');
+  if(pmb){if(pendingM>0){pmb.style.display='inline-block';pmb.textContent=pendingM;}else{pmb.style.display='none';}}
 }
 
 function copyLookupLink(){
@@ -5045,7 +5241,7 @@ function printTable(title, tableHTML){
   w.document.close();
 }
 
-function renderAll(){renderDashboard();filterMembers();renderChairTable();renderAnnouncements();updateRecipientCount();updatePendingBadge();populateSKSelects();updateDocsDueBadge();}
+function renderAll(){renderDashboard();filterMembers();renderChairTable();renderAnnouncements();updateRecipientCount();updatePendingBadge();populateSKSelects();updateDocsDueBadge();updateNotifBadge();renderDashboardCharts();}
 
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -5306,8 +5502,11 @@ function renderSKDocuments() {
         <button class="btn btn-outline btn-xs" onclick="editDocument('${d.id}')" style="margin-right:3px;">Edit</button>
         ${d.template_id ? `<button class="btn btn-outline btn-xs" onclick="printDocumentTemplate('${d.id}')" style="margin-right:3px;color:var(--blue-d);">🖨</button>` : ''}
         ${d.file_url ? `<a href="${esc(d.file_url)}" target="_blank" class="btn btn-outline btn-xs" style="margin-right:3px;color:var(--green);">📎 File</a>` : ''}
-        ${CR==='chairman'&&d.brgy===CB&&d.status==='draft'?`<button class="btn btn-outline btn-xs" onclick="submitDocumentForReview('${d.id}')" style="margin-right:3px;color:var(--blue-d);border-color:var(--blue-m);" title="Submit to Federation for approval">📤 Submit</button>`:''}        ${CR==='federation'&&d.status==='submitted'?`<button class="btn btn-green btn-xs" onclick="approveDocument('${d.id}')" style="margin-right:3px;">Approve</button>`:''}        ${CR==='federation'&&d.status==='approved'?`<button class="btn btn-primary btn-xs" onclick="publishDocument('${d.id}')" style="margin-right:3px;">Publish</button>`:''}        ${d.status!=='archived'?((CR==='federation'||(CR==='chairman'&&d.brgy===CB&&!['approved','published'].includes(d.status)))?`<button class="btn btn-outline btn-xs" onclick="archiveDocument('${d.id}')" style="margin-right:3px;color:#92400e;border-color:#f59e0b;" title="Move to archive">📦 Archive</button>`:''): (CR==='federation'?`<button class="btn btn-outline btn-xs" onclick="restoreDocument('${d.id}')" style="margin-right:3px;color:var(--green);border-color:var(--green);" title="Restore from archive">♻️ Restore</button>`:'')}        ${CR==='federation'&&d.status==='archived'?`<button class="btn btn-danger btn-xs" onclick="permanentDeleteDocument('${d.id}')" title="Permanently delete — cannot undo">🗑 Delete</button>`:''}
-      </td>
+        ${CR==='chairman'&&d.brgy===CB&&d.status==='draft'?`<button class="btn btn-outline btn-xs" onclick="submitDocumentForReview('${d.id}')" style="margin-right:3px;color:var(--blue-d);border-color:var(--blue-m);" title="Submit to Federation for approval">📤 Submit</button>`:''}
+        ${CR==='federation'&&d.status==='submitted'?`<button class="btn btn-green btn-xs" onclick="approveDocument('${d.id}')" style="margin-right:3px;">Approve</button>`:''}
+        ${CR==='federation'&&d.status==='approved'?`<button class="btn btn-primary btn-xs" onclick="publishDocument('${d.id}')" style="margin-right:3px;">Publish</button>`:''}
+        ${d.status!=='archived'?((CR==='federation'||(CR==='chairman'&&d.brgy===CB&&!['approved','published'].includes(d.status)))?`<button class="btn btn-outline btn-xs" onclick="archiveDocument('${d.id}')" style="margin-right:3px;color:#92400e;border-color:#f59e0b;">📦 Archive</button>`:''):(CR==='federation'?`<button class="btn btn-outline btn-xs" onclick="restoreDocument('${d.id}')" style="margin-right:3px;color:var(--green);border-color:var(--green);">♻️ Restore</button>`:'')}
+        ${CR==='federation'&&d.status==='archived'?`<button class="btn btn-danger btn-xs" onclick="permanentDeleteDocument('${d.id}')" title="Permanently delete — cannot undo">🗑 Delete</button>`:''}
     </tr>`;
   }).join('');
 }
@@ -5451,8 +5650,6 @@ function openAddDocument() {
   ['docCategory','docType','docStatus','docVisibility','docTemplate'].forEach(id => {
     const e = document.getElementById(id); if(e) e.value = id==='docStatus'?'draft':id==='docVisibility'?'internal':'';
   });
-  // Restrict status/visibility options based on role (GAP 1, GAP 9)
-  _applyDocModalRoleRestrictions();
   ['docDate','docDueDate','docPeriodStart','docPeriodEnd','docExpiryDate'].forEach(id => {
     const e = document.getElementById(id); if(e) e.value = '';
   });
@@ -5508,8 +5705,6 @@ async function editDocument(id) {
   await loadDocVersionHistory(id);
   // Load comments
   await loadDocComments(id);
-  // Restrict status/visibility options based on role (GAP 1, GAP 9)
-  _applyDocModalRoleRestrictions();
   openModal('modalDocument');
 }
 
@@ -5594,19 +5789,10 @@ async function saveDocument() {
   let refNum = document.getElementById('docRefNumber').value.trim();
   if (!refNum) refNum = generateDocRefNumber(category, docType, brgyRaw, year);
 
-  // GAP 6: capture owner_id for audit trail
-  let _ownerId = null;
-  if(SB){try{const {data:ud}=await SB.auth.getUser();_ownerId=ud?.user?.id||null;}catch(e){}}
   const row = {
     ref_number: refNum, title, category, doc_type: docType,
     brgy, fiscal_year: year,
-    owner_id: _ownerId,
-    status: (()=>{
-      const sel=document.getElementById('docStatus').value||'draft';
-      // GAP 1: chairman cannot save as approved or published
-      if(CR==='chairman'&&['approved','published'].includes(sel)){return 'submitted';}
-      return sel;
-    })(),
+    status: document.getElementById('docStatus').value || 'draft',
     visibility: document.getElementById('docVisibility').value || 'internal',
     doc_date: document.getElementById('docDate').value || null,
     due_date: document.getElementById('docDueDate').value || null,
@@ -5652,47 +5838,82 @@ async function viewDocument(id) {
 // ── WORKFLOW ACTIONS ──────────────────────────────────────────────────────────
 async function approveDocument(id) {
   if (!confirm('Approve this document? The chairman will be notified.')) return;
-  await _updateDocStatus(id, 'approved', {approved_at: new Date().toISOString(), approved_by: null});
+  const d = skDocuments.find(x=>x.id===id);
+  const {data:me} = await SB.auth.getUser();
+  await _updateDocStatus(id, 'approved', {approved_at: new Date().toISOString(), approved_by: me?.user?.id||null});
+  writeAuditLog('approve','document',id, d?.ref_number||d?.title, d?.brgy, {from:'submitted',to:'approved'});
+  // Notify the document owner / submitter
+  if (d?.owner_id) createNotification(d.owner_id,'doc_approved','Document Approved','Your document "'+((d.title)||'')+ '" has been approved.','sk-documents',id);
 }
 async function publishDocument(id) {
   if (!confirm('Publish this document? It will appear on the public website.')) return;
-  await _updateDocStatus(id, 'published', {visibility:'public', published_at: new Date().toISOString()});
+  const d = skDocuments.find(x=>x.id===id);
+  const {data:me} = await SB.auth.getUser();
+  await _updateDocStatus(id, 'published', {visibility:'public', published_at:new Date().toISOString(), published_by:me?.user?.id||null});
+  writeAuditLog('publish','document',id, d?.ref_number||d?.title, d?.brgy, {from:'approved',to:'published'});
 }
-// ── ARCHIVE / RESTORE / PERMANENT DELETE ─────────────────────────────────────
+// ── DOCUMENT WORKFLOW ACTIONS ───────────────────────────────────────────────
 async function archiveDocument(id) {
-  const d = skDocuments.find(x => x.id === id);
+  const d = skDocuments.find(x=>x.id===id);
   if (!d) return;
-  if (CR === 'chairman') {
-    if (d.brgy !== CB) { showToast('You can only archive your own barangay documents.','err'); return; }
-    if (['approved','published'].includes(d.status)) { showToast('Only the Federation can archive approved or published documents.','err'); return; }
+  if (CR==='chairman') {
+    if (d.brgy!==CB){showToast('You can only archive your own barangay documents.','err');return;}
+    if (['approved','published'].includes(d.status)){showToast('Only the Federation can archive approved or published documents.','err');return;}
   }
-  if (!confirm('Archive this document?\n\nIt will be hidden from active lists. The Federation can restore it later.')) return;
-  await _updateDocStatus(id, 'archived');
+  if (!confirm('Archive this document?\n\nIt will be hidden from active lists. Federation can restore it later.')) return;
+  await _updateDocStatus(id,'archived');
+  writeAuditLog('archive','document',id,d.ref_number||d.title,d.brgy,{from:d.status,to:'archived'});
 }
 
 async function restoreDocument(id) {
-  if (CR !== 'federation') { showToast('Only the Federation can restore archived documents.','err'); return; }
-  const d = skDocuments.find(x => x.id === id);
-  if (!d || d.status !== 'archived') { showToast('Only archived documents can be restored.','err'); return; }
+  if (CR!=='federation'){showToast('Only the Federation can restore archived documents.','err');return;}
+  const d = skDocuments.find(x=>x.id===id);
+  if (!d||d.status!=='archived'){showToast('Only archived documents can be restored.','err');return;}
   if (!confirm('Restore this document from archive?\n\nIt will return to Draft status.')) return;
-  await _updateDocStatus(id, 'draft');
+  await _updateDocStatus(id,'draft');
+  writeAuditLog('restore','document',id,d.ref_number||d.title,d.brgy,{from:'archived',to:'draft'});
 }
 
 async function permanentDeleteDocument(id) {
-  if (CR !== 'federation') { showToast('Only the Federation can permanently delete documents.','err'); return; }
-  const d = skDocuments.find(x => x.id === id);
+  if (CR!=='federation'){showToast('Only the Federation can permanently delete documents.','err');return;}
+  const d = skDocuments.find(x=>x.id===id);
   if (!d) return;
-  if (d.status !== 'archived') { showToast('Only archived documents can be permanently deleted. Archive it first.','err'); return; }
-  if (!confirm('⚠️ PERMANENT DELETE\n\n"' + (d.title||'') + '"\n\nThis will erase the document and all its history.\nThis CANNOT be undone. Continue?')) return;
-  if (!SB) { showToast('Not connected.','err'); return; }
+  if (d.status!=='archived'){showToast('Only archived documents can be permanently deleted. Archive it first.','err');return;}
+  if (!confirm('⚠️ PERMANENT DELETE\n\n"'+(d.title||'')+'\n\nThis cannot be undone. Continue?')) return;
+  if (!SB){showToast('Not connected.','err');return;}
   try {
-    const {error} = await SB.from('sk_documents').delete().eq('id', id).eq('status','archived');
+    const {error}=await SB.from('sk_documents').delete().eq('id',id).eq('status','archived');
     if (error) throw error;
-    skDocuments = skDocuments.filter(x => x.id !== id);
-    renderSKDocuments();
-    updateDocsDueBadge();
+    skDocuments=skDocuments.filter(x=>x.id!==id);
+    renderSKDocuments();updateDocsDueBadge();
+    writeAuditLog('delete','document',id,d.ref_number||d.title,d.brgy,{permanent:true});
     showToast('Document permanently deleted.','ok');
-  } catch(e) { showToast('Delete failed: '+e.message,'err'); }
+  }catch(e){showToast('Delete failed: '+e.message,'err');}
+}
+
+async function submitDocumentForReview(id) {
+  const d = skDocuments.find(x=>x.id===id);
+  if (!d) return;
+  if (CR!=='chairman'){showToast('Only a chairman can submit for review.','err');return;}
+  if (d.brgy!==CB){showToast('You can only submit your own barangay documents.','err');return;}
+  if (d.status!=='draft'){showToast('Only draft documents can be submitted for review.','err');return;}
+  if (!confirm('Submit "'+( d.title||'this document')+'" to the Federation for approval?\n\nIt will be locked from editing until reviewed.')) return;
+  if (!SB){showToast('Not connected.','err');return;}
+  try {
+    const {data:me}=await SB.auth.getUser();
+    const extra={submitted_at:new Date().toISOString(),submitted_by:me?.user?.id||null};
+    const {error}=await SB.from('sk_documents').update({status:'submitted',...extra}).eq('id',id);
+    if (error) throw error;
+    const idx2=skDocuments.findIndex(x=>x.id===id);
+    if (idx2>=0) skDocuments[idx2]={...skDocuments[idx2],status:'submitted',...extra};
+    renderSKDocuments();updateDocsDueBadge();updatePendingBadge();
+    writeAuditLog('submit','document',id,d.ref_number||d.title,d.brgy,{from:'draft',to:'submitted'});
+    // Notify federation
+    const fedIds=await _getFederationUserIds();
+    fedIds.forEach(fid=>createNotification(fid,'doc_submitted','Document Submitted for Review',
+      '"'+(d.title||d.ref_number||'A document')+'" from Brgy '+(d.brgy||CB||'')+ ' needs your approval.','sk-documents',id));
+    showToast('Document submitted for Federation review.','ok');
+  }catch(e){showToast('Submit failed: '+e.message,'err');}
 }
 async function toggleDocPublish() {
   const id = document.getElementById('docPublishToggleBtn')?.dataset?.docid;
@@ -8348,8 +8569,6 @@ function openFormTemplate(tplId, brgy) {
   _feCurrentDocId = null;
   const targetBrgy = CR==='chairman' ? CB : (brgy||CB||'');
   _openFormEditor(tpl, {}, targetBrgy);
-  // GAP 2: restrict feStatusSel for chairman
-  setTimeout(_applyFormEditorRoleRestrictions, 50);
 }
 
 // Open an existing saved document for editing
@@ -8361,8 +8580,6 @@ async function openFormDocument(docId) {
   _feCurrentTplId = doc.template_id;
   _feCurrentDocId = docId;
   _openFormEditor(tpl, doc.form_data || {}, doc.brgy||'');
-  // GAP 2: restrict feStatusSel for chairman
-  setTimeout(_applyFormEditorRoleRestrictions, 50);
   // Set status and visibility from saved doc
   const stSel = document.getElementById('feStatusSel');
   const visSel = document.getElementById('feVisibilitySel');
@@ -8925,122 +9142,456 @@ function addOrdSection() {
   wrap.appendChild(div);
 }
 
-// ── ROLE-BASED MODAL RESTRICTION HELPERS ────────────────────────────────────
 
-// GAP 1+9: Restrict docStatus and docVisibility options for chairman
-function _applyDocModalRoleRestrictions() {
-  const statusSel = document.getElementById('docStatus');
-  const visSel = document.getElementById('docVisibility');
-  if (!statusSel || !visSel) return;
-  if (CR === 'chairman') {
-    // Remove approved, published options from status
-    ['approved','published'].forEach(val => {
-      const opt = statusSel.querySelector(`option[value="${val}"]`);
-      if (opt) opt.remove();
-    });
-    // If current value is restricted, reset to 'submitted'
-    if (['approved','published'].includes(statusSel.value)) statusSel.value = 'submitted';
-    // Lock visibility to internal
-    if (visSel) {
-      const pubOpt = visSel.querySelector('option[value="public"]');
-      if (pubOpt) pubOpt.remove();
-      visSel.value = 'internal';
-      visSel.disabled = true;
-      visSel.title = 'Only the Federation can publish documents publicly.';
-    }
-  } else {
-    // Federation: ensure all options present (modal may have been used as chairman before)
-    if (!statusSel.querySelector('option[value="approved"]')) {
-      const opt = document.createElement('option');
-      opt.value = 'approved'; opt.textContent = 'Approved';
-      statusSel.appendChild(opt);
-    }
-    if (!statusSel.querySelector('option[value="published"]')) {
-      const opt = document.createElement('option');
-      opt.value = 'published'; opt.textContent = 'Published (visible on website)';
-      statusSel.appendChild(opt);
-    }
-    if (visSel) {
-      visSel.disabled = false;
-      if (!visSel.querySelector('option[value="public"]')) {
-        const opt = document.createElement('option');
-        opt.value = 'public'; opt.textContent = '🌐 Public / Transparency (visible to everyone)';
-        visSel.appendChild(opt);
-      }
-    }
+// ══════════════════════════════════════════════════════════════════════════════
+// MODULE: NOTIFICATIONS SYSTEM
+// ══════════════════════════════════════════════════════════════════════════════
+let _notifPanelOpen = false;
+
+function toggleNotifPanel() {
+  const panel = document.getElementById('notifPanel');
+  if (!panel) return;
+  _notifPanelOpen = !_notifPanelOpen;
+  panel.style.display = _notifPanelOpen ? 'block' : 'none';
+  if (_notifPanelOpen) { loadNotifications(); document.addEventListener('click', _closeNotifOnOutsideClick, {once:true}); }
+}
+
+function _closeNotifOnOutsideClick(e) {
+  const panel = document.getElementById('notifPanel');
+  const bell  = document.getElementById('notifBell');
+  if (panel && !panel.contains(e.target) && bell && !bell.contains(e.target)) {
+    panel.style.display = 'none';
+    _notifPanelOpen = false;
   }
 }
 
-// GAP 2: Restrict feStatusSel for chairman in the form editor modal
-function _applyFormEditorRoleRestrictions() {
-  const stSel = document.getElementById('feStatusSel');
-  const visSel = document.getElementById('feVisibilitySel');
-  if (!stSel) return;
-  if (CR === 'chairman') {
-    ['approved','published'].forEach(val => {
-      const opt = stSel.querySelector(`option[value="${val}"]`);
-      if (opt) opt.remove();
-    });
-    if (['approved','published'].includes(stSel.value)) stSel.value = 'submitted';
-    if (visSel) {
-      const pubOpt = visSel.querySelector('option[value="public"]');
-      if (pubOpt) pubOpt.remove();
-      visSel.value = 'internal';
-      visSel.disabled = true;
-    }
-  } else {
-    if (!stSel.querySelector('option[value="approved"]')) {
-      const opt = document.createElement('option');
-      opt.value = 'approved'; opt.textContent = 'Approved';
-      stSel.insertBefore(opt, stSel.querySelector('option[value="published"]') || null);
-    }
-    if (!stSel.querySelector('option[value="published"]')) {
-      const opt = document.createElement('option');
-      opt.value = 'published'; opt.textContent = 'Published';
-      stSel.appendChild(opt);
-    }
-    if (visSel) {
-      visSel.disabled = false;
-      if (!visSel.querySelector('option[value="public"]')) {
-        const opt = document.createElement('option');
-        opt.value = 'public'; opt.textContent = '🌐 Public';
-        visSel.appendChild(opt);
-      }
-    }
-  }
-}
-
-// GAP 3: Chairman submits draft document for federation review
-async function submitDocumentForReview(id) {
-  const d = skDocuments.find(x => x.id === id);
-  if (!d) return;
-  if (CR !== 'chairman') { showToast('Only a chairman can use Submit for Review.','err'); return; }
-  if (d.brgy !== CB) { showToast('You can only submit your own barangay documents.','err'); return; }
-  if (d.status !== 'draft') { showToast('Only draft documents can be submitted for review.','err'); return; }
-  if (!confirm(
-    'Submit "' + (d.title||'this document') + '" to the Federation for approval?\n\n' +
-    'The document will be locked from editing until the Federation reviews it.'
-  )) return;
-  if (!SB) { showToast('Not connected.','err'); return; }
+async function loadNotifications() {
+  if (!SB) return;
+  const list = document.getElementById('notifList');
+  const empty = document.getElementById('notifEmpty');
+  if (!list) return;
   try {
-    const {data:ud} = await SB.auth.getUser();
-    const extra = {
-      submitted_at: new Date().toISOString(),
-      submitted_by: ud?.user?.id || null
-    };
-    const {error} = await SB.from('sk_documents').update({status:'submitted',...extra}).eq('id',id);
+    const {data, error} = await SB.from('sk_notifications')
+      .select('*').order('created_at',{ascending:false}).limit(20);
     if (error) throw error;
-    const idx = skDocuments.findIndex(x => x.id === id);
-    if (idx >= 0) skDocuments[idx] = {...skDocuments[idx], status:'submitted', ...extra};
-    renderSKDocuments();
-    updateDocsDueBadge();
-    updatePendingBadge();
-    showToast('Document submitted for Federation review.','ok');
-  } catch(e) { showToast('Submit failed: '+e.message,'err'); }
+    if (!data || !data.length) {
+      list.innerHTML = '';
+      if (empty) empty.style.display = 'block';
+      return;
+    }
+    if (empty) empty.style.display = 'none';
+    list.innerHTML = data.map(n => `
+      <div onclick="handleNotifClick('${n.id}','${n.link_page||''}','${n.link_id||''}')"
+           style="padding:12px 16px;border-bottom:1px solid var(--border);cursor:pointer;display:flex;gap:10px;align-items:flex-start;background:${n.is_read?'transparent':'var(--blue-l)'};">
+        <div style="font-size:18px;flex-shrink:0;">${_notifIcon(n.type)}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:12.5px;font-weight:${n.is_read?'400':'600'};color:#1e293b;line-height:1.4;">${esc(n.title)}</div>
+          <div style="font-size:11.5px;color:var(--gray-s);margin-top:2px;line-height:1.4;">${esc(n.body||'')}</div>
+          <div style="font-size:10.5px;color:var(--gray-xs);margin-top:4px;">${new Date(n.created_at).toLocaleDateString('en-PH',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
+        </div>
+      </div>`).join('');
+  } catch(e) { console.error('loadNotifications:', e); }
 }
 
-// ── ARCHIVE / RESTORE / PERMANENT DELETE ─────────────────────────────────────
-// (These may already exist from a previous session — adding defensively)
+function _notifIcon(type) {
+  return {
+    doc_submitted:'📤', doc_approved:'✅', doc_published:'🌐',
+    member_pending:'👤', doc_due:'⏰', doc_expiring:'📅'
+  }[type] || '🔔';
+}
+
+async function handleNotifClick(id, page, linkId) {
+  if (!SB) return;
+  await SB.from('sk_notifications').update({is_read:true}).eq('id',id);
+  document.getElementById('notifPanel').style.display = 'none';
+  _notifPanelOpen = false;
+  if (page) goPage(page);
+}
+
+async function markAllNotifsRead() {
+  if (!SB) return;
+  await SB.from('sk_notifications').update({is_read:true}).eq('recipient_id',(await SB.auth.getUser())?.data?.user?.id);
+  updateNotifBadge();
+  loadNotifications();
+}
+
+async function clearAllNotifs() {
+  if (!SB || !confirm('Clear all notifications?')) return;
+  const uid = (await SB.auth.getUser())?.data?.user?.id;
+  if (!uid) return;
+  await SB.from('sk_notifications').delete().eq('recipient_id', uid);
+  document.getElementById('notifList').innerHTML = '';
+  const e = document.getElementById('notifEmpty'); if(e) e.style.display='block';
+  updateNotifBadge();
+}
+
+async function updateNotifBadge() {
+  if (!SB) return;
+  try {
+    const {count} = await SB.from('sk_notifications')
+      .select('*',{count:'exact',head:true}).eq('is_read',false);
+    const badge = document.getElementById('notifBadge');
+    if (!badge) return;
+    if (count > 0) { badge.style.display='inline-block'; badge.textContent=count; }
+    else { badge.style.display='none'; }
+  } catch(e) {}
+}
+
+async function createNotification(recipientId, type, title, body, linkPage, linkId) {
+  if (!SB || !recipientId) return;
+  try {
+    const {data:me} = await SB.auth.getUser();
+    await SB.from('sk_notifications').insert({
+      recipient_id: recipientId, type, title, body,
+      link_page: linkPage||null, link_id: linkId||null,
+      created_by: me?.user?.id||null
+    });
+  } catch(e) { console.warn('createNotification failed:', e.message); }
+}
+
+// Helper: get federation user IDs (for notifications to federation)
+async function _getFederationUserIds() {
+  if (!SB) return [];
+  try {
+    const {data} = await SB.from('profiles').select('id').eq('app_role','federation');
+    return (data||[]).map(r=>r.id);
+  } catch(e) { return []; }
+}
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+// MODULE: AUDIT LOG
+// ══════════════════════════════════════════════════════════════════════════════
+let _auditOffset = 0;
+const AUDIT_PAGE_SIZE = 30;
+
+async function writeAuditLog(action, resource, resourceId, resourceRef, brgy, detail) {
+  if (!SB) return;
+  try {
+    const {data:me} = await SB.auth.getUser();
+    await SB.from('sk_audit_log').insert({
+      actor_id:   me?.user?.id || null,
+      actor_name: _currentUser?.displayName || CU || 'Unknown',
+      actor_role: CR || 'unknown',
+      actor_brgy: CB || null,
+      action, resource,
+      resource_id:  resourceId  || null,
+      resource_ref: resourceRef || null,
+      brgy:         brgy        || CB  || null,
+      detail:       detail      || null
+    });
+  } catch(e) { console.warn('writeAuditLog failed:', e.message); }
+}
+
+async function loadAuditLog(append) {
+  if (!SB) return;
+  if (!append) _auditOffset = 0;
+  const action   = document.getElementById('auditFAction')?.value  || '';
+  const brgy     = document.getElementById('auditFBrgy')?.value    || '';
+  const resource = document.getElementById('auditFResource')?.value|| '';
+  const from     = document.getElementById('auditFFrom')?.value    || '';
+  const to       = document.getElementById('auditFTo')?.value      || '';
+  const search   = document.getElementById('auditFSearch')?.value  || '';
+  const tl = document.getElementById('auditTimeline');
+  const empty = document.getElementById('auditEmpty');
+  const more  = document.getElementById('auditLoadMore');
+  if (!tl) return;
+  if (!append) tl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--gray-s);font-size:12.5px;">Loading…</div>';
+  try {
+    let q = SB.from('sk_audit_log').select('*').order('created_at',{ascending:false})
+      .range(_auditOffset, _auditOffset + AUDIT_PAGE_SIZE - 1);
+    if (action)   q = q.eq('action',   action);
+    if (brgy)     q = q.eq('brgy',     brgy);
+    if (resource) q = q.eq('resource', resource);
+    if (from)     q = q.gte('created_at', from+'T00:00:00Z');
+    if (to)       q = q.lte('created_at', to+'T23:59:59Z');
+    if (search)   q = q.or(`actor_name.ilike.%${search}%,resource_ref.ilike.%${search}%`);
+    const {data, error} = await q;
+    if (error) throw error;
+    if (!append) tl.innerHTML = '';
+    if (!data || !data.length) {
+      if (!append) { empty.style.display='block'; more.style.display='none'; }
+      return;
+    }
+    empty.style.display = 'none';
+    renderAuditTimeline(data, append);
+    _auditOffset += data.length;
+    more.style.display = data.length === AUDIT_PAGE_SIZE ? 'inline-flex' : 'none';
+  } catch(e) { showToast('Audit log error: '+e.message,'err'); }
+}
+
+function renderAuditTimeline(rows, append) {
+  const tl = document.getElementById('auditTimeline');
+  if (!tl) return;
+  const actionColors = {
+    create:'var(--blue)', update:'var(--amber)', submit:'var(--blue-m)',
+    approve:'var(--green)', publish:'#059669', archive:'var(--gray)',
+    restore:'var(--teal)', delete:'var(--red)',
+    approve_member:'var(--green)', reject_member:'var(--red)'
+  };
+  const actionEmoji = {
+    create:'➕', update:'✏️', submit:'📤', approve:'✅', publish:'🌐',
+    archive:'📦', restore:'♻️', delete:'🗑️',
+    approve_member:'👍', reject_member:'👎', login:'🔐', logout:'🚪'
+  };
+  const html = rows.map(r => `
+    <div style="display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);">
+      <div style="width:32px;height:32px;border-radius:50%;background:${actionColors[r.action]||'var(--gray-m)'};color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">${actionEmoji[r.action]||'•'}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:600;color:#1e293b;">${esc(r.actor_name||'Unknown')} <span style="font-weight:400;color:var(--gray-s);">${r.action.replace(/_/g,' ')}</span> <span style="color:var(--blue-d);">${esc(r.resource_ref||r.resource_id||'—')}</span></div>
+        <div style="font-size:11.5px;color:var(--gray-s);margin-top:2px;">${esc(r.actor_role||'')}${r.actor_brgy?' · '+r.actor_brgy:''} · ${r.brgy||'Federation'}</div>
+        <div style="font-size:11px;color:var(--gray-xs);margin-top:2px;">${new Date(r.created_at).toLocaleString('en-PH',{year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
+      </div>
+    </div>`).join('');
+  if (append) tl.insertAdjacentHTML('beforeend', html);
+  else tl.innerHTML = html;
+}
+
+function exportAuditCSV() {
+  if (!SB) return;
+  SB.from('sk_audit_log').select('*').order('created_at',{ascending:false}).limit(5000)
+    .then(({data}) => {
+      if (!data || !data.length) { showToast('No audit records.','info'); return; }
+      const head = ['Date','Actor','Role','Barangay','Action','Resource','Ref','Detail'];
+      const rows = data.map(r => [
+        new Date(r.created_at).toLocaleString('en-PH'),
+        r.actor_name||'', r.actor_role||'', r.actor_brgy||'',
+        r.action||'', r.resource||'', r.resource_ref||'',
+        r.detail ? JSON.stringify(r.detail) : ''
+      ].map(v => '"'+String(v).replace(/"/g,'""')+'"').join(','));
+      const blob = new Blob([[head.join(','),...rows].join('
+')], {type:'text/csv'});
+      const a = document.createElement('a'); a.href=URL.createObjectURL(blob);
+      a.download=`sk-audit-log-${new Date().toISOString().slice(0,10)}.csv`; a.click();
+    });
+}
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+// MODULE: PENDING MEMBER APPROVAL
+// ══════════════════════════════════════════════════════════════════════════════
+function renderPendingMembers() {
+  const pending = (CR==='federation' ? members : members.filter(m=>m.brgy===CB))
+    .filter(m => m.status === 'Pending');
+  const grid  = document.getElementById('pendingMembersGrid');
+  const empty = document.getElementById('pendingMembersEmpty');
+  const lbl   = document.getElementById('pendingCountLabel');
+  if (!grid) return;
+  if (lbl) lbl.textContent = pending.length > 0 ? pending.length+' pending review' : '';
+  if (!pending.length) { grid.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display = 'none';
+  grid.innerHTML = pending.map(m => `
+    <div class="card" style="padding:16px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+        <div style="width:44px;height:44px;border-radius:50%;background:var(--blue-l);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:var(--blue-d);flex-shrink:0;">${esc((m.fn||'?')[0]+(m.ln||'?')[0])}</div>
+        <div>
+          <div style="font-size:14px;font-weight:700;color:#1e293b;">${esc(m.fn||'')} ${esc(m.mn?m.mn[0]+'. ':'')}${esc(m.ln||'')}</div>
+          <div style="font-size:11.5px;color:var(--gray-s);">Brgy ${esc(m.brgy||'—')} · ${esc(m.classif||'—')}</div>
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--gray-s);line-height:1.7;margin-bottom:12px;">
+        ${m.dob?'<div>📅 DOB: '+esc(m.dob)+'</div>':''}
+        ${m.mobile?'<div>📞 '+esc(m.mobile)+'</div>':''}
+        ${m.email?'<div>✉️ '+esc(m.email)+'</div>':''}
+        <div>📍 Purok ${esc(m.purok||'—')}</div>
+        <div style="font-size:11px;color:var(--gray-xs);margin-top:4px;">Registered: ${m.created_at?new Date(m.created_at).toLocaleDateString('en-PH'):'—'}</div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-green btn-sm" style="flex:1;justify-content:center;" onclick="approveMember('${m.id}')">✅ Approve</button>
+        <button class="btn btn-danger btn-sm" style="flex:1;justify-content:center;" onclick="rejectMember('${m.id}')">✕ Reject</button>
+      </div>
+    </div>`).join('');
+}
+
+async function rejectMember(id) {
+  const m = members.find(x => String(x.id)===String(id));
+  if (!m) return;
+  const note = prompt('Rejection reason (optional):');
+  if (note === null) return; // cancelled
+  if (!confirm('Reject '+m.fn+' '+m.ln+'? This will mark their registration as Rejected.')) return;
+  try {
+    if (SB && !String(id).startsWith('local')) {
+      const {data:me} = await SB.auth.getUser();
+      const {error} = await SB.from('members').update({
+        status:'Rejected', rejection_note:note||null,
+        reviewed_by: me?.user?.id||null, reviewed_at: new Date().toISOString()
+      }).eq('id', id);
+      if (error) throw error;
+    }
+    m.status = 'Rejected';
+    renderPendingMembers();
+    filterMembers();
+    updatePendingBadge();
+    showToast(m.fn+' '+m.ln+' registration rejected.','info');
+    writeAuditLog('reject_member','member',String(id),m.fn+' '+m.ln,m.brgy,{note});
+  } catch(e) { showToast('Reject failed: '+e.message,'err'); }
+}
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+// MODULE: BACKUP & RESTORE
+// ══════════════════════════════════════════════════════════════════════════════
+async function runFullBackup() {
+  if (CR !== 'federation') { showToast('Backup is federation-only.','err'); return; }
+  if (!SB) { showToast('Not connected.','err'); return; }
+  const backup = { version:2, created_at:new Date().toISOString(), created_by:CU, data:{} };
+  try {
+    if (document.getElementById('bkMembers')?.checked) {
+      const {data} = await SB.from('members').select('*').limit(50000);
+      backup.data.members = data || [];
+    }
+    if (document.getElementById('bkDocuments')?.checked) {
+      const {data} = await SB.from('sk_documents').select('*').limit(50000);
+      backup.data.documents = data || [];
+    }
+    if (document.getElementById('bkAnnouncements')?.checked) {
+      const {data} = await SB.from('announcements').select('*').limit(10000);
+      backup.data.announcements = data || [];
+    }
+    if (document.getElementById('bkSKData')?.checked) {
+      // Export all localStorage SK keys
+      const skKeys = Object.keys(localStorage).filter(k=>k.startsWith('sk_'));
+      const skData = {};
+      skKeys.forEach(k=>{ try{skData[k]=JSON.parse(localStorage.getItem(k));}catch(e){skData[k]=localStorage.getItem(k);} });
+      backup.data.sk_local = skData;
+    }
+    if (document.getElementById('bkAudit')?.checked) {
+      const {data} = await SB.from('sk_audit_log').select('*').order('created_at',{ascending:false}).limit(10000);
+      backup.data.audit_log = data || [];
+    }
+    const blob = new Blob([JSON.stringify(backup, null, 2)], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `sk-talibon-backup-${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+    showToast('Backup downloaded successfully.','ok');
+    writeAuditLog('backup','system',null,'Full system backup',null,{modules:Object.keys(backup.data)});
+  } catch(e) { showToast('Backup error: '+e.message,'err'); }
+}
+
+function previewRestoreFile(input) {
+  const btn = document.getElementById('restoreBtn');
+  const preview = document.getElementById('restorePreview');
+  if (!input.files || !input.files[0]) { btn.disabled=true; preview.style.display='none'; return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data.version || !data.data) throw new Error('Not a valid SK backup file.');
+      const modules = Object.keys(data.data);
+      const memberCount  = data.data.members?.length  || 0;
+      const docCount     = data.data.documents?.length || 0;
+      const skKeyCount   = data.data.sk_local ? Object.keys(data.data.sk_local).length : 0;
+      preview.innerHTML = `<strong>Backup valid</strong> · Created: ${new Date(data.created_at).toLocaleDateString('en-PH')}<br>
+        Modules: ${modules.join(', ')}<br>
+        Members: ${memberCount} · Documents: ${docCount} · SK local keys: ${skKeyCount}`;
+      preview.style.display = 'block';
+      btn.disabled = false;
+      btn._backupData = data;
+    } catch(err) {
+      preview.innerHTML = '❌ '+err.message;
+      preview.style.display = 'block';
+      btn.disabled = true;
+    }
+  };
+  reader.readAsText(input.files[0]);
+}
+
+function runRestore() {
+  const btn = document.getElementById('restoreBtn');
+  if (!btn._backupData) return;
+  if (!confirm('Restore SK governance data from this backup?\n\nThis will overwrite current localStorage data.')) return;
+  const sk = btn._backupData.data.sk_local;
+  if (sk && typeof sk === 'object') {
+    Object.entries(sk).forEach(([k,v]) => {
+      try { localStorage.setItem(k, typeof v==='string'?v:JSON.stringify(v)); } catch(e){}
+    });
+    loadSKData();
+    renderAll();
+    showToast('SK governance data restored from backup.','ok');
+    writeAuditLog('restore','system',null,'Backup restore',null,{file:btn._backupData.created_at});
+  } else {
+    showToast('No SK governance data found in backup.','info');
+  }
+}
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+// MODULE: DASHBOARD CHARTS (Chart.js mini charts)
+// ══════════════════════════════════════════════════════════════════════════════
+let _chartInstances = {};
+
+function renderDashboardCharts() {
+  if (typeof Chart === 'undefined') return;
+  // Destroy existing chart instances to prevent canvas reuse error
+  Object.values(_chartInstances).forEach(ch => { try{ch.destroy();}catch(e){} });
+  _chartInstances = {};
+
+  const data = scopedMembers();
+  if (!data.length) return;
+
+  // ── Chart 1: Member Classification (donut) ────────────────────────────────
+  const classifEl = document.getElementById('chartClassif');
+  if (classifEl) {
+    const classifCounts = {};
+    data.forEach(m => { classifCounts[m.classif||'Unknown'] = (classifCounts[m.classif||'Unknown']||0)+1; });
+    const labels = Object.keys(classifCounts);
+    const values = Object.values(classifCounts);
+    _chartInstances.classif = new Chart(classifEl, {
+      type:'doughnut',
+      data:{labels, datasets:[{data:values,backgroundColor:['#1a56db','#057a55','#d97706','#7c3aed','#0891b2','#dc2626','#64748b'],borderWidth:2}]},
+      options:{plugins:{legend:{position:'right',labels:{font:{size:11},boxWidth:12}}},responsive:true,maintainAspectRatio:false}
+    });
+  }
+
+  // ── Chart 2: Barangay Member Distribution (bar) — federation only ─────────
+  const brgyEl = document.getElementById('chartBrgy');
+  if (brgyEl && CR==='federation') {
+    const brgyCounts = {};
+    data.forEach(m => { brgyCounts[m.brgy||'Unknown']=(brgyCounts[m.brgy||'Unknown']||0)+1; });
+    const sorted = Object.entries(brgyCounts).sort((a,b)=>b[1]-a[1]).slice(0,12);
+    _chartInstances.brgy = new Chart(brgyEl, {
+      type:'bar',
+      data:{labels:sorted.map(x=>x[0]),datasets:[{label:'Members',data:sorted.map(x=>x[1]),backgroundColor:'#1a56db',borderRadius:4}]},
+      options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{stepSize:1,font:{size:10}}},x:{ticks:{font:{size:10}}}},responsive:true,maintainAspectRatio:false}
+    });
+  }
+
+  // ── Chart 3: Document Status Breakdown (bar) ──────────────────────────────
+  const docEl = document.getElementById('chartDocStatus');
+  if (docEl && skDocuments && skDocuments.length) {
+    const statusLabels = ['draft','submitted','approved','published','archived'];
+    const statusColors = ['#64748b','#d97706','#1a56db','#057a55','#94a3b8'];
+    const statusCounts = statusLabels.map(s => skDocuments.filter(d=>d.status===s).length);
+    _chartInstances.docStatus = new Chart(docEl, {
+      type:'bar',
+      data:{labels:statusLabels.map(s=>s.charAt(0).toUpperCase()+s.slice(1)),datasets:[{data:statusCounts,backgroundColor:statusColors,borderRadius:4}]},
+      options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{stepSize:1,font:{size:10}}},x:{ticks:{font:{size:11}}}},responsive:true,maintainAspectRatio:false}
+    });
+  }
+}
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+// MODULE: QR VERIFICATION
+// ══════════════════════════════════════════════════════════════════════════════
+function renderQRForMember(memberId, canvasId) {
+  if (typeof QRCode === 'undefined') return;
+  const el = document.getElementById(canvasId);
+  if (!el) return;
+  el.innerHTML = '';
+  const verifyUrl = window.location.origin + window.location.pathname.replace('admin.html','') + 'index.html?verify=' + memberId;
+  new QRCode(el, {text:verifyUrl, width:80, height:80, colorDark:'#1e293b', colorLight:'#fff', correctLevel:QRCode.CorrectLevel.M});
+}
+
+function renderQR(memberId, containerId) {
+  renderQRForMember(memberId, containerId);
+}
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+// EXPOSE NEW FUNCTIONS TO GLOBAL SCOPE
+// ══════════════════════════════════════════════════════════════════════════════
 
 // ── Expose critical functions to global scope for inline onclick handlers ──
 window.doLogin = doLogin;
@@ -9086,11 +9637,6 @@ window.saveDocument = saveDocument;
 window.approveDocument = approveDocument;
 window.publishDocument = publishDocument;
 window.archiveDocument = archiveDocument;
-window.restoreDocument = restoreDocument;
-window.permanentDeleteDocument = permanentDeleteDocument;
-window.submitDocumentForReview = submitDocumentForReview;
-window._applyDocModalRoleRestrictions = _applyDocModalRoleRestrictions;
-window._applyFormEditorRoleRestrictions = _applyFormEditorRoleRestrictions;
 window.toggleDocPublish = toggleDocPublish;
 window.exportDocsCSV = exportDocsCSV;
 window.printDocumentTemplate = printDocumentTemplate;
@@ -9105,6 +9651,41 @@ window.saveAccountInfo = saveAccountInfo;
 window.changePassword = changePassword;
 window.goPage = goPage;
 window.openModal = openModal;
+window.toggleNotifPanel = toggleNotifPanel;
+window.markAllNotifsRead = markAllNotifsRead;
+window.clearAllNotifs = clearAllNotifs;
+window.handleNotifClick = handleNotifClick;
+window.createNotification = createNotification;
+window.updateNotifBadge = updateNotifBadge;
+window.loadAuditLog = loadAuditLog;
+window.exportAuditCSV = exportAuditCSV;
+window.runFullBackup = runFullBackup;
+window.previewRestoreFile = previewRestoreFile;
+window.runRestore = runRestore;
+window.renderPendingMembers = renderPendingMembers;
+window.rejectMember = rejectMember;
+window.writeAuditLog = writeAuditLog;
+window.renderDashboardCharts = renderDashboardCharts;
+window.renderQR = renderQR;
+window.renderQRForMember = renderQRForMember;
+window.submitDocumentForReview = submitDocumentForReview;
+window.restoreDocument = restoreDocument;
+window.permanentDeleteDocument = permanentDeleteDocument;
+window.renderPendingMembers = renderPendingMembers;
+window.rejectMember = rejectMember;
+window.toggleNotifPanel = toggleNotifPanel;
+window.markAllNotifsRead = markAllNotifsRead;
+window.clearAllNotifs = clearAllNotifs;
+window.handleNotifClick = handleNotifClick;
+window.updateNotifBadge = updateNotifBadge;
+window.loadAuditLog = loadAuditLog;
+window.exportAuditCSV = exportAuditCSV;
+window.runFullBackup = runFullBackup;
+window.previewRestoreFile = previewRestoreFile;
+window.runRestore = runRestore;
+window.writeAuditLog = writeAuditLog;
+window.renderDashboardCharts = renderDashboardCharts;
+window.renderQR = renderQR;
 window.closeModal = closeModal;
 </script>
 </body>
