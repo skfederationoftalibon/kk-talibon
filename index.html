@@ -521,7 +521,7 @@ async function init(){
     bar.appendChild(chip);
     const opt=document.createElement('option');opt.value=b;opt.textContent=b;fbSel.appendChild(opt);
   });
-  // Connect Supabase — production hardcoded config
+  // Connect Supabase — production hardcoded config (anon key)
   const url="https://hozyktubijxlzzmaywip.supabase.co";
   const key="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhvenlrdHViaWp4bHp6bWF5d2lwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMDA3NzgsImV4cCI6MjA4OTU3Njc3OH0.ySZlJrh6VOXzgOHBaFQW4_IpZyyVaz0cxNbl0BX2hkU";
   try{
@@ -992,6 +992,51 @@ function renderTransparencyDocs() {
 
 // Start
 window.addEventListener('load',init);
+
+
+// ── QR ID VERIFICATION (via ?verify=<id> URL param) ──────────────────────────
+async function renderVerifyScreen(memberId) {
+  const icon  = document.getElementById('verifyIcon');
+  const title = document.getElementById('verifyTitle');
+  const body  = document.getElementById('verifyBody');
+  if (!icon) return;
+  if (!SB) {
+    icon.textContent='⚠️';
+    title.textContent='Connection Error';
+    body.textContent='Could not connect to the database. Please check your internet connection.';
+    return;
+  }
+  try {
+    const {data,error}=await SB.from('members_verify').select('*').eq('id',memberId).single();
+    if (error || !data) {
+      icon.textContent='❌';
+      title.textContent='ID Not Found';
+      body.textContent='No active KK member found for this QR code. It may be outdated or invalid.';
+      return;
+    }
+    icon.textContent = data.status==='Active' ? '✅' : '⚠️';
+    title.textContent = data.status==='Active' ? 'KK Member Verified' : 'Status: ' + data.status;
+    body.innerHTML =
+      '<strong style="font-size:16px;color:#1e293b;">' + escV(data.first_name + ' ' + data.last_name) + '</strong><br>' +
+      '<span style="color:#64748b;">Barangay ' + escV(data.brgy||'—') + '</span><br>' +
+      '<span style="color:#64748b;">' + escV(data.classif||'—') + '</span><br>' +
+      '<span style="font-size:11px;color:#94a3b8;margin-top:12px;display:block;">' +
+      'Verified via SK Federation Talibon<br>' + new Date().toLocaleDateString('en-PH',{year:'numeric',month:'long',day:'numeric'}) + '</span>';
+  } catch(e) {
+    icon.textContent='❌';
+    title.textContent='Verification Error';
+    body.textContent = e.message;
+  }
+}
+function escV(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
 </script>
+<div id="verifyScreen" style="display:none;min-height:100vh;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#fff;border-radius:16px;padding:28px;max-width:380px;width:100%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.12);">
+    <div id="verifyIcon" style="font-size:48px;margin-bottom:12px;">🔍</div>
+    <div id="verifyTitle" style="font-size:20px;font-weight:700;color:#1e293b;margin-bottom:6px;">Verifying ID...</div>
+    <div id="verifyBody" style="font-size:14px;color:#64748b;line-height:1.7;"></div>
+  </div>
+</div>
 </body>
 </html>
