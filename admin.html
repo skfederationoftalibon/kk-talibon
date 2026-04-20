@@ -9359,8 +9359,7 @@ function exportAuditCSV() {
         r.action||'', r.resource||'', r.resource_ref||'',
         r.detail ? JSON.stringify(r.detail) : ''
       ].map(v => '"'+String(v).replace(/"/g,'""')+'"').join(','));
-      const blob = new Blob([[head.join(','),...rows].join('
-')], {type:'text/csv'});
+      const blob = new Blob([[head.join(','),...rows].join('\n')], {type:'text/csv'});
       const a = document.createElement('a'); a.href=URL.createObjectURL(blob);
       a.download=`sk-audit-log-${new Date().toISOString().slice(0,10)}.csv`; a.click();
     });
