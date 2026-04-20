@@ -3635,7 +3635,7 @@ function exportCSV(){
   showToast('Exported '+data.length+' members to CSV!','ok');
 }
 
-async async function approveMember(id){
+async function approveMember(id){
   const m=members.find(x=>String(x.id)===String(id));if(!m)return;
   if(!confirm('Approve '+m.fn+' '+m.ln+' as an active KK member?'))return;
   try{
